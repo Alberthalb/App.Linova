@@ -1,9 +1,11 @@
 import React, { useContext, useState } from "react";
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
+import { Feather } from "@expo/vector-icons";
 import CustomButton from "../../components/CustomButton";
 import { AppContext } from "../../navigation/AppNavigator";
-import { colors, spacing, typography } from "../../styles/theme";
+import { colors, spacing, typography, radius } from "../../styles/theme";
 
 const LoginScreen = ({ navigation }) => {
   const { setLevel } = useContext(AppContext);
@@ -25,13 +27,19 @@ const LoginScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right", "bottom"]}>
       <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <View style={styles.hero}>
-          <Image source={require("../../../assets/Logotipo.png")} style={styles.logo} resizeMode="contain" />
+        <LinearGradient colors={[colors.primary, colors.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
+          <View style={styles.heroTop}>
+            <Image source={require("../../../assets/Logotipo.png")} style={styles.logo} resizeMode="contain" />
+            <View style={styles.badge}>
+              <Feather name="zap" size={14} color={colors.background} />
+              <Text style={styles.badgeText}>Beta</Text>
+            </View>
+          </View>
           <Text style={styles.title}>Bem-vindo a Linova</Text>
           <Text style={styles.subtitle}>Entre e continue sua jornada</Text>
-        </View>
+        </LinearGradient>
         <View style={styles.card}>
           <TextInput
             style={styles.input}
@@ -72,19 +80,25 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.xl + spacing.sm,
     justifyContent: "flex-start",
     gap: spacing.md,
   },
   hero: {
     gap: spacing.xs,
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
+    padding: spacing.lg,
+    borderRadius: radius.lg,
+    shadowColor: colors.primary,
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 3,
   },
   title: {
     fontSize: typography.heading + 4,
     fontWeight: "700",
-    color: colors.primary,
+    color: colors.background,
     fontFamily: typography.fonts.heading,
   },
   logo: {
@@ -94,8 +108,8 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: typography.subheading,
-    color: colors.muted,
-    marginBottom: spacing.xl,
+    color: "#E8EDFF",
+    marginBottom: spacing.sm,
     fontFamily: typography.fonts.body,
   },
   card: {
@@ -142,6 +156,25 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontFamily: typography.fonts.body,
     textAlign: "center",
+  },
+  heroTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  badge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: radius.sm,
+  },
+  badgeText: {
+    color: colors.background,
+    fontSize: typography.small,
+    fontFamily: typography.fonts.body,
   },
 });
 

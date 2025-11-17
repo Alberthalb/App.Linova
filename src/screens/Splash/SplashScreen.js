@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { View, Text, StyleSheet, Image } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import LottieView from "lottie-react-native";
 import { colors, typography } from "../../styles/theme";
 
@@ -13,23 +14,30 @@ const SplashScreen = ({ navigation }) => {
   }, [navigation]);
 
   return (
-    <View style={styles.container}>
-      <Image source={require("../../../assets/Logotipo.png")} style={styles.logo} resizeMode="contain" />
-      <LottieView style={styles.lottie} source={require("../../assets/animations/splash.json")} autoPlay loop />
-      <Text style={styles.title}>Linova</Text>
-      <Text style={styles.subtitle}>A forma mais facil e prazerosa de aprender uma lingua nova.</Text>
-      <Text style={styles.footer}>Aplicativo em versao de testes. Erros podem acontecer.</Text>
-    </View>
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right", "bottom"]}>
+      <View style={styles.container}>
+        <Image source={require("../../../assets/Logotipo.png")} style={styles.logo} resizeMode="contain" />
+        <LottieView style={styles.lottie} source={require("../../assets/animations/splash.json")} autoPlay loop />
+        <Text style={styles.title}>Linova</Text>
+        <Text style={styles.subtitle}>A forma mais facil e prazerosa de aprender uma lingua nova.</Text>
+        <Text style={styles.footer}>Aplicativo em versao de testes. Erros podem acontecer.</Text>
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   container: {
     flex: 1,
     backgroundColor: colors.background,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 24,
+    paddingVertical: 32,
   },
   logo: {
     width: 160,

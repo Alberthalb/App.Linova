@@ -17,7 +17,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right", "bottom"]}>
       <View style={styles.container}>
         <Text style={styles.title}>Recuperar senha</Text>
         <Text style={styles.subtitle}>Enviaremos um link para recuperacao (mock).</Text>
@@ -45,8 +45,8 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.xl + spacing.sm,
     justifyContent: "flex-start",
     gap: spacing.md,
   },

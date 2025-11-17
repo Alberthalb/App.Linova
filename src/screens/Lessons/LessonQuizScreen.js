@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import CustomButton from "../../components/CustomButton";
-import { colors, spacing, typography } from "../../styles/theme";
+import { colors, spacing, typography, radius } from "../../styles/theme";
 
 const QUESTIONS = [
   {
@@ -35,6 +35,7 @@ const LessonQuizScreen = ({ navigation, route }) => {
   const [answers, setAnswers] = useState({});
   const total = QUESTIONS.length;
   const currentQuestion = useMemo(() => QUESTIONS[step], [step]);
+  const progress = (step + 1) / total;
 
   const selectOption = (optionIndex) => {
     setAnswers((prev) => ({ ...prev, [currentQuestion.id]: optionIndex }));
@@ -72,13 +73,16 @@ const LessonQuizScreen = ({ navigation, route }) => {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right", "bottom"]}>
       <View style={styles.container}>
         <View style={styles.hero}>
           <Text style={styles.heading}>Quiz: {lessonTitle}</Text>
           <Text style={styles.progress}>
             Pergunta {step + 1} de {total}
           </Text>
+        </View>
+        <View style={styles.progressBar}>
+          <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
         </View>
         <View style={styles.card}>
           <Text style={styles.question}>{currentQuestion.question}</Text>
@@ -110,8 +114,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.xl + spacing.sm,
     gap: spacing.md,
   },
   hero: {
@@ -130,7 +134,7 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: radius.md,
     padding: spacing.lg,
     gap: spacing.md,
     flex: 1,
@@ -145,7 +149,7 @@ const styles = StyleSheet.create({
   },
   option: {
     padding: spacing.md,
-    borderRadius: 12,
+    borderRadius: radius.md,
     backgroundColor: colors.gray,
   },
   optionSelected: {
@@ -160,6 +164,16 @@ const styles = StyleSheet.create({
     color: colors.background,
     fontWeight: "700",
     fontFamily: typography.fonts.heading,
+  },
+  progressBar: {
+    height: 10,
+    backgroundColor: colors.gray,
+    borderRadius: radius.md,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    backgroundColor: colors.primary,
   },
 });
 

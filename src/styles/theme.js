@@ -7,6 +7,7 @@ export const colors = {
   muted: "#6B7280",
   gray: "#E5E7EB",
   border: "#E5E7EB",
+  overlay: "rgba(17,24,39,0.05)",
 };
 
 export const spacing = {
@@ -15,6 +16,7 @@ export const spacing = {
   md: 16,
   lg: 20,
   xl: 24,
+  xxl: 32,
 };
 
 export const typography = {
@@ -27,4 +29,11 @@ export const typography = {
     body: "Inter_400Regular",
     button: "Poppins_700Bold",
   },
+};
+
+export const radius = {
+  sm: 10,
+  md: 14,
+  lg: 18,
+  xl: 22,
 };

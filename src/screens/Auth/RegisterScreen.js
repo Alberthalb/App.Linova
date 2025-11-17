@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
+import { Feather } from "@expo/vector-icons";
 import CustomButton from "../../components/CustomButton";
-import { colors, spacing, typography } from "../../styles/theme";
+import { colors, spacing, typography, radius } from "../../styles/theme";
 
 const RegisterScreen = ({ navigation }) => {
   const [name, setName] = useState("");
@@ -19,13 +21,19 @@ const RegisterScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right", "bottom"]}>
       <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <View style={styles.hero}>
-          <Image source={require("../../../assets/Logotipo.png")} style={styles.logo} resizeMode="contain" />
+        <LinearGradient colors={[colors.primary, colors.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
+          <View style={styles.heroRow}>
+            <Image source={require("../../../assets/Logotipo.png")} style={styles.logo} resizeMode="contain" />
+            <View style={styles.badge}>
+              <Feather name="award" size={14} color={colors.background} />
+              <Text style={styles.badgeText}>Nova conta</Text>
+            </View>
+          </View>
           <Text style={styles.title}>Crie sua conta</Text>
           <Text style={styles.subtitle}>Avance para desbloquear o quiz inicial.</Text>
-        </View>
+        </LinearGradient>
         <View style={styles.card}>
           <TextInput style={styles.input} placeholder="Nome completo" value={name} onChangeText={setName} />
           <TextInput
@@ -55,24 +63,31 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.xl + spacing.sm,
     justifyContent: "flex-start",
     gap: spacing.md,
   },
   hero: {
     gap: spacing.xs,
+    padding: spacing.lg,
+    borderRadius: radius.lg,
+    marginBottom: spacing.lg,
+    shadowColor: colors.primary,
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 3,
   },
   title: {
     fontSize: typography.heading + 2,
     fontWeight: "700",
-    color: colors.primary,
+    color: colors.background,
     marginBottom: spacing.lg,
     fontFamily: typography.fonts.heading,
   },
   subtitle: {
     fontSize: typography.body,
-    color: colors.muted,
+    color: "#E8EDFF",
     marginTop: -spacing.sm,
     marginBottom: spacing.sm,
     fontFamily: typography.fonts.body,
@@ -111,6 +126,25 @@ const styles = StyleSheet.create({
   link: {
     color: colors.primary,
     fontWeight: "600",
+    fontFamily: typography.fonts.body,
+  },
+  heroRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  badge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: radius.sm,
+  },
+  badgeText: {
+    color: colors.background,
+    fontSize: typography.small,
     fontFamily: typography.fonts.body,
   },
 });

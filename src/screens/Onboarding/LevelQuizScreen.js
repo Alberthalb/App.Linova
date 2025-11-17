@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CustomButton from "../../components/CustomButton";
 import { AppContext } from "../../navigation/AppNavigator";
-import { colors, spacing, typography } from "../../styles/theme";
+import { colors, spacing, typography, radius } from "../../styles/theme";
 
 const QUESTIONS = [
   {
@@ -60,6 +60,7 @@ const LevelQuizScreen = ({ navigation }) => {
 
   const question = useMemo(() => QUESTIONS[step], [step]);
   const totalSteps = QUESTIONS.length;
+  const progress = (step + 1) / totalSteps;
 
   const handleSelect = (value) => {
     setAnswers((prev) => ({ ...prev, [question.id]: value }));
@@ -91,13 +92,16 @@ const LevelQuizScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right", "bottom"]}>
       <View style={styles.container}>
         <View style={styles.hero}>
           <Text style={styles.title}>Quiz de Nivel</Text>
           <Text style={styles.progress}>
             Pergunta {step + 1} de {totalSteps}
           </Text>
+        </View>
+        <View style={styles.progressBar}>
+          <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
         </View>
         <View style={styles.card}>
           <Text style={styles.question}>{question.question}</Text>
@@ -129,8 +133,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.xl + spacing.sm,
     gap: spacing.md,
   },
   hero: {
@@ -149,7 +153,7 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: radius.md,
     padding: spacing.lg,
     gap: spacing.md,
     flex: 1,
@@ -164,7 +168,7 @@ const styles = StyleSheet.create({
   },
   option: {
     padding: spacing.md,
-    borderRadius: 12,
+    borderRadius: radius.md,
     backgroundColor: colors.gray,
   },
   optionSelected: {
@@ -182,6 +186,17 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: spacing.sm,
+  },
+  progressBar: {
+    height: 10,
+    backgroundColor: colors.gray,
+    borderRadius: radius.md,
+    overflow: "hidden",
+    marginBottom: spacing.md,
+  },
+  progressFill: {
+    height: "100%",
+    backgroundColor: colors.primary,
   },
 });
 

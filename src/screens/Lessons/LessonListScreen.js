@@ -1,7 +1,8 @@
-import React from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from "react-native";
+import React, { useMemo, useState } from "react";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { colors, spacing, typography } from "../../styles/theme";
+import { Feather } from "@expo/vector-icons";
+import { colors, spacing, typography, radius } from "../../styles/theme";
 
 const LESSONS = [
   { id: 1, title: "Basic Greetings", level: "Beginner" },
@@ -10,6 +11,17 @@ const LESSONS = [
 ];
 
 const LessonListScreen = ({ navigation }) => {
+  const [filter, setFilter] = useState("Todas");
+  const [query, setQuery] = useState("");
+
+  const filteredLessons = useMemo(() => {
+    return LESSONS.filter((item) => {
+      const matchesLevel = filter === "Todas" || item.level === filter;
+      const matchesQuery = item.title.toLowerCase().includes(query.toLowerCase());
+      return matchesLevel && matchesQuery;
+    });
+  }, [filter, query]);
+
   const renderItem = ({ item }) => (
     <TouchableOpacity style={styles.card} onPress={() => navigation.navigate("Lesson", { lesson: item })} activeOpacity={0.85}>
       <Text style={styles.title}>{item.title}</Text>
@@ -18,13 +30,45 @@ const LessonListScreen = ({ navigation }) => {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      <Text style={styles.heading}>Aulas disponiveis</Text>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right", "bottom"]}>
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.heading}>Aulas disponiveis</Text>
+          <Text style={styles.subheading}>Escolha o nivel e encontre sua proxima aula.</Text>
+        </View>
+        <View style={styles.filterRow}>
+          {["Todas", "Beginner", "Advanced"].map((tag) => {
+            const active = filter === tag;
+            return (
+              <TouchableOpacity
+                key={tag}
+                style={[styles.chip, active && styles.chipActive]}
+                onPress={() => setFilter(tag)}
+                activeOpacity={0.85}
+              >
+                <Text style={[styles.chipText, active && styles.chipTextActive]}>{tag}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </View>
+      <View style={styles.search}>
+        <Feather name="search" size={18} color={colors.muted} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Buscar aula"
+          placeholderTextColor={colors.muted}
+          value={query}
+          onChangeText={setQuery}
+        />
+      </View>
       <FlatList
-        data={LESSONS}
+        data={filteredLessons}
         renderItem={renderItem}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={<Text style={styles.empty}>Nenhuma aula encontrada.</Text>}
       />
     </SafeAreaView>
   );
@@ -34,9 +78,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xl,
     paddingTop: spacing.xl,
-    paddingBottom: spacing.xl,
+    paddingBottom: spacing.xl + spacing.sm,
   },
   heading: {
     fontSize: typography.heading,
@@ -44,6 +88,14 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginBottom: spacing.md,
     fontFamily: typography.fonts.heading,
+  },
+  subheading: {
+    fontSize: typography.body,
+    color: colors.muted,
+    fontFamily: typography.fonts.body,
+  },
+  header: {
+    gap: spacing.xs,
   },
   list: {
     gap: spacing.md,
@@ -66,6 +118,55 @@ const styles = StyleSheet.create({
     fontSize: typography.body,
     color: colors.muted,
     fontFamily: typography.fonts.body,
+  },
+  filterRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  chip: {
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.sm,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  chipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  chipText: {
+    fontSize: typography.small,
+    color: colors.muted,
+    fontFamily: typography.fonts.body,
+    fontWeight: "600",
+  },
+  chipTextActive: {
+    color: colors.background,
+  },
+  search: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    backgroundColor: colors.surface,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: spacing.md,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: typography.body,
+    color: colors.text,
+    fontFamily: typography.fonts.body,
+  },
+  empty: {
+    textAlign: "center",
+    color: colors.muted,
+    fontFamily: typography.fonts.body,
+    marginTop: spacing.lg,
   },
 });
 
