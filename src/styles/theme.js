@@ -1,9 +1,12 @@
 export const colors = {
-  primary: "#1C583C",
-  white: "#FFFFFF",
-  light: "#F0F0F0",
-  dark: "#222222",
-  gray: "#EAEAEA",
+  primary: "#397EFF",
+  accent: "#FF675A",
+  background: "#FFFFFF",
+  surface: "#F5F7FB",
+  text: "#111827",
+  muted: "#6B7280",
+  gray: "#E5E7EB",
+  border: "#E5E7EB",
 };
 
 export const spacing = {
@@ -19,4 +22,9 @@ export const typography = {
   subheading: 18,
   body: 16,
   small: 14,
+  fonts: {
+    heading: "Poppins_700Bold",
+    body: "Inter_400Regular",
+    button: "Poppins_700Bold",
+  },
 };

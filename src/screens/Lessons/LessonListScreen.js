@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { colors, spacing, typography } from "../../styles/theme";
 
 const LESSONS = [
@@ -17,44 +18,54 @@ const LessonListScreen = ({ navigation }) => {
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <Text style={styles.heading}>Aulas disponiveis</Text>
-      <FlatList data={LESSONS} renderItem={renderItem} keyExtractor={(item) => item.id.toString()} contentContainerStyle={styles.list} />
-    </View>
+      <FlatList
+        data={LESSONS}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.list}
+      />
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.white,
-    padding: spacing.lg,
+    backgroundColor: colors.background,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.xl,
   },
   heading: {
     fontSize: typography.heading,
     color: colors.primary,
     fontWeight: "700",
     marginBottom: spacing.md,
+    fontFamily: typography.fonts.heading,
   },
   list: {
     gap: spacing.md,
   },
   card: {
-    backgroundColor: colors.light,
+    backgroundColor: colors.surface,
     padding: spacing.lg,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#e0e0e0",
+    borderColor: colors.border,
   },
   title: {
     fontSize: typography.subheading + 1,
     fontWeight: "700",
-    color: colors.dark,
+    color: colors.text,
+    fontFamily: typography.fonts.body,
   },
   level: {
     marginTop: spacing.xs,
     fontSize: typography.body,
-    color: "#555",
+    color: colors.muted,
+    fontFamily: typography.fonts.body,
   },
 });
 

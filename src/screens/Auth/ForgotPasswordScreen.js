@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, StyleSheet, TextInput, Alert } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import CustomButton from "../../components/CustomButton";
 import { colors, spacing, typography } from "../../styles/theme";
 
@@ -16,54 +17,65 @@ const ForgotPasswordScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Recuperar senha</Text>
-      <Text style={styles.subtitle}>Enviaremos um link para recuperacao (mock).</Text>
-      <View style={styles.card}>
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          placeholderTextColor="#8A8A8A"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-        <CustomButton title="Enviar link" onPress={handleReset} />
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+      <View style={styles.container}>
+        <Text style={styles.title}>Recuperar senha</Text>
+        <Text style={styles.subtitle}>Enviaremos um link para recuperacao (mock).</Text>
+        <View style={styles.card}>
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            placeholderTextColor="#8A8A8A"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          <CustomButton title="Enviar link" onPress={handleReset} />
+        </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   container: {
     flex: 1,
-    backgroundColor: colors.white,
-    padding: spacing.lg,
-    justifyContent: "center",
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xl,
+    justifyContent: "flex-start",
     gap: spacing.md,
   },
   title: {
     fontSize: typography.heading,
     fontWeight: "700",
     color: colors.primary,
+    fontFamily: typography.fonts.heading,
   },
   subtitle: {
     fontSize: typography.body,
-    color: colors.dark,
+    color: colors.muted,
+    fontFamily: typography.fonts.body,
   },
   card: {
-    backgroundColor: colors.light,
+    backgroundColor: colors.surface,
     padding: spacing.lg,
     borderRadius: 16,
     gap: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   input: {
     backgroundColor: colors.gray,
     borderRadius: 12,
     padding: spacing.md,
     fontSize: typography.body,
-    color: colors.dark,
+    color: colors.text,
+    fontFamily: typography.fonts.body,
   },
 });
 

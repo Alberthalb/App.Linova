@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Image } from "react-native";
 import LottieView from "lottie-react-native";
 import { colors, typography } from "../../styles/theme";
 
@@ -14,9 +14,11 @@ const SplashScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      <Image source={require("../../../assets/Logotipo.png")} style={styles.logo} resizeMode="contain" />
       <LottieView style={styles.lottie} source={require("../../assets/animations/splash.json")} autoPlay loop />
       <Text style={styles.title}>Linova</Text>
-      <Text style={styles.subtitle}>Aprenda idiomas com jornadas guiadas</Text>
+      <Text style={styles.subtitle}>A forma mais facil e prazerosa de aprender uma lingua nova.</Text>
+      <Text style={styles.footer}>Aplicativo em versao de testes. Erros podem acontecer.</Text>
     </View>
   );
 };
@@ -24,10 +26,15 @@ const SplashScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.white,
+    backgroundColor: colors.background,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 24,
+  },
+  logo: {
+    width: 160,
+    height: 60,
+    marginBottom: 8,
   },
   lottie: {
     width: 200,
@@ -38,12 +45,21 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: colors.primary,
     marginTop: 12,
+    fontFamily: typography.fonts.heading,
   },
   subtitle: {
     fontSize: typography.subheading,
-    color: colors.dark,
+    color: colors.text,
     marginTop: 4,
     textAlign: "center",
+    fontFamily: typography.fonts.body,
+  },
+  footer: {
+    fontSize: typography.small,
+    color: colors.muted,
+    marginTop: 12,
+    textAlign: "center",
+    fontFamily: typography.fonts.body,
   },
 });
 

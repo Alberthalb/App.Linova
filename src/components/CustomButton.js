@@ -10,7 +10,7 @@ const CustomButton = ({ title, onPress, disabled = false, loading = false, style
       activeOpacity={0.85}
       disabled={disabled || loading}
     >
-      {loading ? <ActivityIndicator color={colors.white} /> : <Text style={styles.title}>{title}</Text>}
+      {loading ? <ActivityIndicator color={colors.background} /> : <Text style={styles.title}>{title}</Text>}
     </TouchableOpacity>
   );
 };
@@ -25,10 +25,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   title: {
-    color: colors.white,
+    color: colors.background,
     fontSize: typography.body,
     fontWeight: "600",
     letterSpacing: 0.3,
+    fontFamily: typography.fonts.button,
   },
   disabled: {
     opacity: 0.6,

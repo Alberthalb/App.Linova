@@ -1,5 +1,6 @@
 import React, { useContext, useMemo, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import CustomButton from "../../components/CustomButton";
 import { AppContext } from "../../navigation/AppNavigator";
 import { colors, spacing, typography } from "../../styles/theme";
@@ -90,59 +91,76 @@ const LevelQuizScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Quiz de Nivel</Text>
-      <Text style={styles.progress}>
-        Pergunta {step + 1} de {totalSteps}
-      </Text>
-      <View style={styles.card}>
-        <Text style={styles.question}>{question.question}</Text>
-        {question.options.map((option) => {
-          const selected = answers[question.id] === option.value;
-          return (
-            <TouchableOpacity
-              key={option.text}
-              style={[styles.option, selected && styles.optionSelected]}
-              onPress={() => handleSelect(option.value)}
-              activeOpacity={0.85}
-            >
-              <Text style={[styles.optionText, selected && styles.optionSelectedText]}>{option.text}</Text>
-            </TouchableOpacity>
-          );
-        })}
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+      <View style={styles.container}>
+        <View style={styles.hero}>
+          <Text style={styles.title}>Quiz de Nivel</Text>
+          <Text style={styles.progress}>
+            Pergunta {step + 1} de {totalSteps}
+          </Text>
+        </View>
+        <View style={styles.card}>
+          <Text style={styles.question}>{question.question}</Text>
+          {question.options.map((option) => {
+            const selected = answers[question.id] === option.value;
+            return (
+              <TouchableOpacity
+                key={option.text}
+                style={[styles.option, selected && styles.optionSelected]}
+                onPress={() => handleSelect(option.value)}
+                activeOpacity={0.85}
+              >
+                <Text style={[styles.optionText, selected && styles.optionSelectedText]}>{option.text}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+        <CustomButton title={step === totalSteps - 1 ? "Finalizar" : "Proxima"} onPress={goNext} style={styles.button} />
       </View>
-      <CustomButton title={step === totalSteps - 1 ? "Finalizar" : "Proxima"} onPress={goNext} style={styles.button} />
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   container: {
     flex: 1,
-    backgroundColor: colors.white,
-    padding: spacing.lg,
+    backgroundColor: colors.background,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xl,
     gap: spacing.md,
+  },
+  hero: {
+    gap: spacing.xs,
   },
   title: {
     fontSize: typography.heading + 2,
     fontWeight: "700",
     color: colors.primary,
+    fontFamily: typography.fonts.heading,
   },
   progress: {
     fontSize: typography.body,
-    color: colors.dark,
+    color: colors.muted,
+    fontFamily: typography.fonts.body,
   },
   card: {
-    backgroundColor: colors.light,
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: spacing.lg,
     gap: spacing.md,
     flex: 1,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   question: {
     fontSize: typography.subheading + 2,
     fontWeight: "600",
-    color: colors.dark,
+    color: colors.text,
+    fontFamily: typography.fonts.heading,
   },
   option: {
     padding: spacing.md,
@@ -154,11 +172,13 @@ const styles = StyleSheet.create({
   },
   optionText: {
     fontSize: typography.body,
-    color: colors.dark,
+    color: colors.text,
+    fontFamily: typography.fonts.body,
   },
   optionSelectedText: {
-    color: colors.white,
+    color: colors.background,
     fontWeight: "700",
+    fontFamily: typography.fonts.heading,
   },
   button: {
     marginTop: spacing.sm,

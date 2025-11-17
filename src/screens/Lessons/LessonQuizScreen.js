@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import CustomButton from "../../components/CustomButton";
 import { colors, spacing, typography } from "../../styles/theme";
@@ -71,59 +72,76 @@ const LessonQuizScreen = ({ navigation, route }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Quiz: {lessonTitle}</Text>
-      <Text style={styles.progress}>
-        Pergunta {step + 1} de {total}
-      </Text>
-      <View style={styles.card}>
-        <Text style={styles.question}>{currentQuestion.question}</Text>
-        {currentQuestion.options.map((option, index) => {
-          const selected = answers[currentQuestion.id] === index;
-          return (
-            <TouchableOpacity
-              key={option}
-              style={[styles.option, selected && styles.optionSelected]}
-              onPress={() => selectOption(index)}
-              activeOpacity={0.85}
-            >
-              <Text style={[styles.optionText, selected && styles.optionTextSelected]}>{option}</Text>
-            </TouchableOpacity>
-          );
-        })}
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+      <View style={styles.container}>
+        <View style={styles.hero}>
+          <Text style={styles.heading}>Quiz: {lessonTitle}</Text>
+          <Text style={styles.progress}>
+            Pergunta {step + 1} de {total}
+          </Text>
+        </View>
+        <View style={styles.card}>
+          <Text style={styles.question}>{currentQuestion.question}</Text>
+          {currentQuestion.options.map((option, index) => {
+            const selected = answers[currentQuestion.id] === index;
+            return (
+              <TouchableOpacity
+                key={option}
+                style={[styles.option, selected && styles.optionSelected]}
+                onPress={() => selectOption(index)}
+                activeOpacity={0.85}
+              >
+                <Text style={[styles.optionText, selected && styles.optionTextSelected]}>{option}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+        <CustomButton title={step === total - 1 ? "Finalizar" : "Proxima"} onPress={goNext} />
       </View>
-      <CustomButton title={step === total - 1 ? "Finalizar" : "Proxima"} onPress={goNext} />
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   container: {
     flex: 1,
-    backgroundColor: colors.white,
-    padding: spacing.lg,
+    backgroundColor: colors.background,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xl,
     gap: spacing.md,
+  },
+  hero: {
+    gap: spacing.xs,
   },
   heading: {
     fontSize: typography.heading,
     fontWeight: "700",
     color: colors.primary,
+    fontFamily: typography.fonts.heading,
   },
   progress: {
-    color: colors.dark,
+    color: colors.muted,
     fontSize: typography.body,
+    fontFamily: typography.fonts.body,
   },
   card: {
-    backgroundColor: colors.light,
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: spacing.lg,
     gap: spacing.md,
     flex: 1,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   question: {
     fontSize: typography.subheading + 1,
     fontWeight: "600",
-    color: colors.dark,
+    color: colors.text,
+    fontFamily: typography.fonts.heading,
   },
   option: {
     padding: spacing.md,
@@ -135,11 +153,13 @@ const styles = StyleSheet.create({
   },
   optionText: {
     fontSize: typography.body,
-    color: colors.dark,
+    color: colors.text,
+    fontFamily: typography.fonts.body,
   },
   optionTextSelected: {
-    color: colors.white,
+    color: colors.background,
     fontWeight: "700",
+    fontFamily: typography.fonts.heading,
   },
 });
 
