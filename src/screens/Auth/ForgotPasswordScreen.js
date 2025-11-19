@@ -15,7 +15,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
       Alert.alert("Email obrigatorio", "Informe seu email para recuperar a senha.");
       return;
     }
-    Alert.alert("Link enviado", "Verifique seu email para redefinir a senha (mock).");
+    Alert.alert("Link enviado", "Verifique seu email para redefinir a senha (em desenvolvimento).");
     navigation.goBack();
   };
 
@@ -29,7 +29,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.title}>Recuperar senha</Text>
-        <Text style={styles.subtitle}>Enviaremos um link para recuperacao (mock).</Text>
+        <Text style={styles.subtitle}>Enviaremos um link para recuperacao (em desenvolvimento).</Text>
         <View style={styles.card}>
           <TextInput
             style={styles.input}

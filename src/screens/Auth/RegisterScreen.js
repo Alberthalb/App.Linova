@@ -25,7 +25,7 @@ const RegisterScreen = ({ navigation }) => {
     const derivedName = getDisplayName(name, email);
     setUserName(derivedName);
     setUserEmail(email);
-    Alert.alert("Conta criada", "Login liberado com suas credenciais mockadas.");
+    Alert.alert("Conta criada", "Login liberado com suas credenciais em desenvolvimento.");
     navigation.replace("Login");
   };
 

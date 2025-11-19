@@ -31,14 +31,14 @@ const LessonScreen = ({ route, navigation }) => {
           <LinearGradient colors={[colors.overlay, "transparent"]} style={styles.videoOverlay} />
           <View style={styles.videoBadge}>
             <Feather name="play-circle" size={16} color={colors.background} />
-            <Text style={styles.videoBadgeText}>Player mock</Text>
+            <Text style={styles.videoBadgeText}>Player em desenvolvimento</Text>
           </View>
           <Video source={{ uri: VIDEO_URL }} style={styles.video} useNativeControls resizeMode="contain" shouldPlay />
         </View>
         <TouchableOpacity onPress={() => setShowSubtitles((prev) => !prev)} style={styles.subtitleButton} activeOpacity={0.9}>
-          <Text style={styles.subtitleButtonText}>{showSubtitles ? "Desativar" : "Ativar"} legendas (mock)</Text>
-        </TouchableOpacity>
-        {showSubtitles && <Text style={styles.subtitles}>[Legendas mockadas] Hello! Welcome to your lesson.</Text>}
+        <Text style={styles.subtitleButtonText}>{showSubtitles ? "Desativar" : "Ativar"} legendas (em desenvolvimento)</Text>
+      </TouchableOpacity>
+      {showSubtitles && <Text style={styles.subtitles}>[Legendas em desenvolvimento] Hello! Welcome to your lesson.</Text>}
         <View style={styles.transcript}>
           <Text style={styles.sectionTitle}>Transcricao</Text>
           <Text style={styles.body}>{TRANSCRIPT}</Text>

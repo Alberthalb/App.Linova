@@ -41,7 +41,7 @@ const HomeScreen = ({ navigation }) => {
 
         <View style={styles.actions}>
           <CustomButton title="Ver aulas" onPress={() => navigation.navigate("LessonList")} />
-          <CustomButton title="Conversacao IA (visual)" variant="ghost" onPress={() => {}} />
+          <CustomButton title="Conversacao IA (Em breve)" variant="ghost" onPress={() => {}} />
         </View>
       </View>
     </SafeAreaView>

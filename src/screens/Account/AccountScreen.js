@@ -45,7 +45,7 @@ const AccountScreen = () => {
     const display = getDisplayName(name, email, userName);
     setUserName(display);
     setUserEmail(email);
-    Alert.alert("Perfil atualizado", "Seu nome e email foram atualizados (mock).");
+    Alert.alert("Perfil atualizado", "Seu nome e email foram atualizados (em desenvolvimento).");
   };
 
   const handleClearProgress = async () => {
@@ -97,14 +97,14 @@ const AccountScreen = () => {
             <Feather name="sliders" size={16} color={colors.primary} />
           </View>
           <View style={styles.row}>
-            <View>
+            <View style={styles.rowText}>
               <Text style={styles.prefTitle}>Notificações</Text>
-              <Text style={styles.prefSubtitle}>Lembretes e novidades (mock)</Text>
+              <Text style={styles.prefSubtitle}>Lembretes e novidades{'\n'}(em desenvolvimento)</Text>
             </View>
             <Switch value={notifications} onValueChange={setNotifications} trackColor={{ true: colors.primary }} />
           </View>
           <View style={styles.row}>
-            <View>
+            <View style={styles.rowText}>
               <Text style={styles.prefTitle}>Legendas automáticas</Text>
               <Text style={styles.prefSubtitle}>Ativar ao iniciar os vídeos</Text>
             </View>
@@ -210,6 +210,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    paddingVertical: spacing.xs,
+    gap: spacing.md,
+  },
+  rowText: {
+    flex: 1,
   },
   prefTitle: {
     fontSize: typography.body,
