@@ -1,15 +1,18 @@
-import React, { useState } from "react";
+import React, { useContext, useMemo, useState } from "react";
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Image, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
 import CustomButton from "../../components/CustomButton";
-import { colors, spacing, typography, radius } from "../../styles/theme";
-import { AppContext } from "../../navigation/AppNavigator";
+import { spacing, typography, radius } from "../../styles/theme";
+import { AppContext } from "../../context/AppContext";
 import { getDisplayName } from "../../utils/userName";
+import { useThemeColors } from "../../hooks/useThemeColors";
 
 const RegisterScreen = ({ navigation }) => {
   const { setUserName, setUserEmail } = useContext(AppContext);
+  const theme = useThemeColors();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,11 +39,11 @@ const RegisterScreen = ({ navigation }) => {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <LinearGradient colors={[colors.primary, colors.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
+          <LinearGradient colors={[theme.primary, theme.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
             <View style={styles.heroRow}>
-              <Image source={require("../../../assets/Logotipo.png")} style={styles.logo} resizeMode="contain" />
+              <Image source={require("../../../assets/icon.png")} style={styles.logo} resizeMode="contain" />
               <View style={styles.badge}>
-                <Feather name="award" size={14} color={colors.background} />
+                <Feather name="award" size={14} color={theme.background} />
                 <Text style={styles.badgeText}>Nova conta</Text>
               </View>
             </View>
@@ -79,111 +82,112 @@ const RegisterScreen = ({ navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-  },
-  safe: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  container: {
-    flexGrow: 1,
-    paddingHorizontal: spacing.layout,
-    paddingVertical: spacing.layout,
-    paddingBottom: spacing.layout * 1.5,
-    justifyContent: "flex-start",
-    gap: spacing.md,
-  },
-  hero: {
-    gap: spacing.xs,
-    padding: spacing.lg,
-    borderRadius: radius.lg,
-    marginBottom: spacing.lg,
-    shadowColor: colors.primary,
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 3,
-  },
-  title: {
-    fontSize: typography.heading + 2,
-    fontWeight: "700",
-    color: colors.background,
-    marginBottom: spacing.lg,
-    fontFamily: typography.fonts.heading,
-  },
-  subtitle: {
-    fontSize: typography.body,
-    color: "#E8EDFF",
-    marginTop: -spacing.sm,
-    marginBottom: spacing.sm,
-    fontFamily: typography.fonts.body,
-  },
-  logo: {
-    width: 140,
-    height: 40,
-    marginBottom: spacing.xs,
-  },
-  card: {
-    width: "100%",
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: spacing.lg,
-    gap: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  input: {
-    backgroundColor: colors.gray,
-    borderRadius: 12,
-    padding: spacing.md,
-    fontSize: typography.body,
-    color: colors.text,
-    fontFamily: typography.fonts.body,
-  },
-  footerLinkWrapper: {
-    flexDirection: "row",
-    marginTop: spacing.lg,
-  },
-  footerText: {
-    fontSize: typography.body,
-    color: colors.text,
-    fontFamily: typography.fonts.body,
-  },
-  link: {
-    color: colors.primary,
-    fontWeight: "600",
-    fontFamily: typography.fonts.body,
-  },
-  fieldHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  fieldLabel: {
-    color: colors.text,
-    fontFamily: typography.fonts.body,
-    fontWeight: "600",
-  },
-  heroRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  badge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: radius.sm,
-  },
-  badgeText: {
-    color: colors.background,
-    fontSize: typography.small,
-    fontFamily: typography.fonts.body,
-  },
-});
+const createStyles = (theme) =>
+  StyleSheet.create({
+    flex: {
+      flex: 1,
+    },
+    safe: {
+      flex: 1,
+      backgroundColor: theme.background,
+    },
+    container: {
+      flexGrow: 1,
+      paddingHorizontal: spacing.layout,
+      paddingVertical: spacing.layout,
+      paddingBottom: spacing.layout * 1.5,
+      justifyContent: "flex-start",
+      gap: spacing.md,
+    },
+    hero: {
+      gap: spacing.xs,
+      padding: spacing.lg,
+      borderRadius: radius.lg,
+      marginBottom: spacing.lg,
+      shadowColor: theme.cardShadow,
+      shadowOpacity: 0.12,
+      shadowRadius: 12,
+      elevation: 3,
+    },
+    title: {
+      fontSize: typography.heading + 2,
+      fontWeight: "700",
+      color: theme.background,
+      marginBottom: spacing.lg,
+      fontFamily: typography.fonts.heading,
+    },
+    subtitle: {
+      fontSize: typography.body,
+      color: theme.overlay === "rgba(17,24,39,0.05)" ? "#E8EDFF" : theme.muted,
+      marginTop: -spacing.sm,
+      marginBottom: spacing.sm,
+      fontFamily: typography.fonts.body,
+    },
+    logo: {
+      width: 140,
+      height: 40,
+      marginBottom: spacing.xs,
+    },
+    card: {
+      width: "100%",
+      backgroundColor: theme.surface,
+      borderRadius: 16,
+      padding: spacing.lg,
+      gap: spacing.md,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    input: {
+      backgroundColor: theme.gray,
+      borderRadius: 12,
+      padding: spacing.md,
+      fontSize: typography.body,
+      color: theme.text,
+      fontFamily: typography.fonts.body,
+    },
+    footerLinkWrapper: {
+      flexDirection: "row",
+      marginTop: spacing.lg,
+    },
+    footerText: {
+      fontSize: typography.body,
+      color: theme.text,
+      fontFamily: typography.fonts.body,
+    },
+    link: {
+      color: theme.primary,
+      fontWeight: "600",
+      fontFamily: typography.fonts.body,
+    },
+    fieldHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    fieldLabel: {
+      color: theme.text,
+      fontFamily: typography.fonts.body,
+      fontWeight: "600",
+    },
+    heroRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    badge: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      backgroundColor: "rgba(255,255,255,0.15)",
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: radius.sm,
+    },
+    badgeText: {
+      color: theme.background,
+      fontSize: typography.small,
+      fontFamily: typography.fonts.body,
+    },
+  });
 
 export default RegisterScreen;

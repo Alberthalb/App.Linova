@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput } from "r
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { colors, spacing, typography, radius } from "../../styles/theme";
-import { AppContext } from "../../navigation/AppNavigator";
+import { AppContext } from "../../context/AppContext";
 import { getDisplayName } from "../../utils/userName";
 
 const LESSONS = [
@@ -35,30 +35,30 @@ const LessonListScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right", "bottom"]}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.heading}>Aulas disponiveis</Text>
-          <Text style={styles.subheading}>
-            {friendlyName}, escolha o nivel e encontre sua proxima aula.
-          </Text>
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.heading}>Aulas disponiveis</Text>
+            <Text style={styles.subheading}>
+              {friendlyName}, escolha o nivel e encontre sua proxima aula.
+            </Text>
+          </View>
+          <View style={styles.filterRow}>
+            {["Todas", "Beginner", "Advanced"].map((tag) => {
+              const active = filter === tag;
+              return (
+                <TouchableOpacity
+                  key={tag}
+                  style={[styles.chip, active && styles.chipActive]}
+                  onPress={() => setFilter(tag)}
+                  activeOpacity={0.85}
+                >
+                  <Text style={[styles.chipText, active && styles.chipTextActive]}>{tag}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
-        <View style={styles.filterRow}>
-          {["Todas", "Beginner", "Advanced"].map((tag) => {
-            const active = filter === tag;
-            return (
-              <TouchableOpacity
-                key={tag}
-                style={[styles.chip, active && styles.chipActive]}
-                onPress={() => setFilter(tag)}
-                activeOpacity={0.85}
-              >
-                <Text style={[styles.chipText, active && styles.chipTextActive]}>{tag}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </View>
-      <View style={styles.search}>
+        <View style={styles.search}>
         <Feather name="search" size={18} color={colors.muted} />
         <TextInput
           style={styles.searchInput}
@@ -128,6 +128,8 @@ const styles = StyleSheet.create({
   filterRow: {
     flexDirection: "row",
     gap: spacing.sm,
+    marginTop: spacing.sm,
+    marginBottom: spacing.md,
   },
   chip: {
     paddingVertical: spacing.xs,

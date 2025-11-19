@@ -2,7 +2,7 @@ import React, { useContext, useMemo, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CustomButton from "../../components/CustomButton";
-import { AppContext } from "../../navigation/AppNavigator";
+import { AppContext } from "../../context/AppContext";
 import { colors, spacing, typography, radius } from "../../styles/theme";
 import { getDisplayName } from "../../utils/userName";
 
@@ -89,7 +89,7 @@ const LevelQuizScreen = ({ navigation }) => {
       computedLevel = "Intermediate";
     }
     setLevel(computedLevel);
-    navigation.replace("Home");
+    navigation.replace("MainTabs");
   };
 
   return (

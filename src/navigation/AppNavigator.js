@@ -1,6 +1,13 @@
-import React, { createContext, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { Feather } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useColorScheme } from "react-native";
+import { typography } from "../styles/theme";
+import { useThemeColors } from "../hooks/useThemeColors";
+import { AppContext } from "../context/AppContext";
 import SplashScreen from "../screens/Splash/SplashScreen";
 import LoginScreen from "../screens/Auth/LoginScreen";
 import RegisterScreen from "../screens/Auth/RegisterScreen";
@@ -11,22 +18,64 @@ import LessonListScreen from "../screens/Lessons/LessonListScreen";
 import LessonScreen from "../screens/Lessons/LessonScreen";
 import LessonQuizScreen from "../screens/Lessons/LessonQuizScreen";
 import AccountScreen from "../screens/Account/AccountScreen";
-
-export const AppContext = createContext({
-  level: null,
-  setLevel: () => {},
-  userName: "Linova",
-  setUserName: () => {},
-  userEmail: "",
-  setUserEmail: () => {},
-});
+import SettingsScreen from "../screens/Settings/SettingsScreen";
 
 const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
+
+const HomeStack = () => (
+  <Stack.Navigator
+    screenOptions={{
+      headerShown: false,
+    }}
+  >
+    <Stack.Screen name="Home" component={HomeScreen} />
+    <Stack.Screen name="LessonList" component={LessonListScreen} />
+    <Stack.Screen name="Lesson" component={LessonScreen} />
+    <Stack.Screen name="LessonQuiz" component={LessonQuizScreen} />
+  </Stack.Navigator>
+);
+
+const MainTabs = () => {
+  const insets = useSafeAreaInsets();
+  const bottomPadding = Math.max(insets.bottom, 12);
+  const theme = useThemeColors();
+
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarActiveTintColor: theme.primary,
+        tabBarInactiveTintColor: theme.muted,
+        tabBarStyle: {
+          height: 62 + bottomPadding,
+          paddingBottom: bottomPadding,
+          paddingTop: 10,
+          borderTopWidth: 0.5,
+          borderTopColor: theme.border,
+        },
+        tabBarIcon: ({ color, size }) => {
+          if (route.name === "TabHome") return <Feather name="home" size={size} color={color} />;
+          if (route.name === "TabAccount") return <Feather name="user" size={size} color={color} />;
+          return <Feather name="settings" size={size} color={color} />;
+        },
+        tabBarLabelStyle: { fontFamily: typography.fonts.body, fontSize: 12 },
+      })}
+    >
+      <Tab.Screen name="TabHome" component={HomeStack} options={{ tabBarLabel: "Home" }} />
+      <Tab.Screen name="TabAccount" component={AccountScreen} options={{ tabBarLabel: "Conta" }} />
+      <Tab.Screen name="TabSettings" component={SettingsScreen} options={{ tabBarLabel: "Config" }} />
+    </Tab.Navigator>
+  );
+};
 
 const AppNavigator = () => {
   const [level, setLevel] = useState(null);
   const [userName, setUserName] = useState("Linova");
   const [userEmail, setUserEmail] = useState("");
+  const [darkMode, setDarkMode] = useState(null);
+  const systemScheme = useColorScheme();
+  const isDark = darkMode === null ? systemScheme === "dark" : darkMode;
 
   const contextValue = useMemo(
     () => ({
@@ -36,8 +85,10 @@ const AppNavigator = () => {
       setUserName,
       userEmail,
       setUserEmail,
+      darkMode,
+      setDarkMode,
     }),
-    [level, userName, userEmail]
+    [level, userName, userEmail, darkMode]
   );
 
   return (
@@ -54,11 +105,7 @@ const AppNavigator = () => {
           <Stack.Screen name="Register" component={RegisterScreen} />
           <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
           <Stack.Screen name="LevelQuiz" component={LevelQuizScreen} />
-          <Stack.Screen name="Home" component={HomeScreen} />
-          <Stack.Screen name="LessonList" component={LessonListScreen} />
-          <Stack.Screen name="Lesson" component={LessonScreen} />
-          <Stack.Screen name="LessonQuiz" component={LessonQuizScreen} />
-          <Stack.Screen name="Account" component={AccountScreen} />
+          <Stack.Screen name="MainTabs" component={MainTabs} />
         </Stack.Navigator>
       </NavigationContainer>
     </AppContext.Provider>

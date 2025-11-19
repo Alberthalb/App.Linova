@@ -1,11 +1,14 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { View, Text, StyleSheet, TextInput, Alert, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CustomButton from "../../components/CustomButton";
-import { colors, spacing, typography } from "../../styles/theme";
+import { spacing, typography } from "../../styles/theme";
+import { useThemeColors } from "../../hooks/useThemeColors";
 
 const ForgotPasswordScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
+  const theme = useThemeColors();
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   const handleReset = () => {
     if (!email.trim()) {
@@ -17,7 +20,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "left", "right", "bottom"]}>
+    <SafeAreaView style={styles.safe} edges={['top','left','right','bottom']}>
       <ScrollView
         contentContainerStyle={styles.container}
         overScrollMode="always"
@@ -44,46 +47,47 @@ const ForgotPasswordScreen = ({ navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  container: {
-    flexGrow: 1,
-    paddingHorizontal: spacing.layout,
-    paddingVertical: spacing.layout,
-    paddingBottom: spacing.layout * 1.5,
-    justifyContent: "flex-start",
-    gap: spacing.md,
-  },
-  title: {
-    fontSize: typography.heading,
-    fontWeight: "700",
-    color: colors.primary,
-    fontFamily: typography.fonts.heading,
-  },
-  subtitle: {
-    fontSize: typography.body,
-    color: colors.muted,
-    fontFamily: typography.fonts.body,
-  },
-  card: {
-    backgroundColor: colors.surface,
-    padding: spacing.lg,
-    borderRadius: 16,
-    gap: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  input: {
-    backgroundColor: colors.gray,
-    borderRadius: 12,
-    padding: spacing.md,
-    fontSize: typography.body,
-    color: colors.text,
-    fontFamily: typography.fonts.body,
-  },
-});
+const createStyles = (colors) =>
+  StyleSheet.create({
+    safe: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    container: {
+      flexGrow: 1,
+      paddingHorizontal: spacing.layout,
+      paddingVertical: spacing.layout,
+      paddingBottom: spacing.layout * 1.5,
+      justifyContent: "flex-start",
+      gap: spacing.md,
+    },
+    title: {
+      fontSize: typography.heading,
+      fontWeight: "700",
+      color: colors.primary,
+      fontFamily: typography.fonts.heading,
+    },
+    subtitle: {
+      fontSize: typography.body,
+      color: colors.muted,
+      fontFamily: typography.fonts.body,
+    },
+    card: {
+      backgroundColor: colors.surface,
+      padding: spacing.lg,
+      borderRadius: 16,
+      gap: spacing.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    input: {
+      backgroundColor: colors.gray,
+      borderRadius: 12,
+      padding: spacing.md,
+      fontSize: typography.body,
+      color: colors.text,
+      fontFamily: typography.fonts.body,
+    },
+  });
 
 export default ForgotPasswordScreen;

@@ -1,84 +1,92 @@
-import React, { useEffect } from "react";
-import { View, Text, StyleSheet, Image } from "react-native";
+import React, { useEffect, useMemo, useRef } from "react";
+import { View, Text, StyleSheet, ImageBackground, Animated } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import LottieView from "lottie-react-native";
-import { colors, typography } from "../../styles/theme";
+import { typography } from "../../styles/theme";
+import { useThemeColors } from "../../hooks/useThemeColors";
 
 const SplashScreen = ({ navigation }) => {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const logoOpacity = useRef(new Animated.Value(0)).current;
+  const logoScale = useRef(new Animated.Value(0.9)).current;
+  const textOpacity = useRef(new Animated.Value(0)).current;
+  const textTranslate = useRef(new Animated.Value(8)).current;
+
   useEffect(() => {
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(logoOpacity, { toValue: 1, duration: 700, useNativeDriver: true }),
+        Animated.spring(logoScale, { toValue: 1, friction: 6, useNativeDriver: true }),
+      ]),
+      Animated.parallel([
+        Animated.timing(textOpacity, { toValue: 1, duration: 500, useNativeDriver: true }),
+        Animated.timing(textTranslate, { toValue: 0, duration: 500, useNativeDriver: true }),
+      ]),
+    ]).start();
+
     const timer = setTimeout(() => {
       navigation.replace("Login");
     }, 2000);
-
     return () => clearTimeout(timer);
-  }, [navigation]);
+  }, [navigation, logoOpacity, logoScale, textOpacity, textTranslate]);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right", "bottom"]}>
-      <View style={styles.container}>
-        <View style={styles.glow} />
-        <Image source={require("../../../assets/Logotipo.png")} style={styles.logo} resizeMode="contain" />
-        <LottieView style={styles.lottie} source={require("../../assets/animations/splash.json")} autoPlay loop />
-        <Text style={styles.title}>Linova</Text>
-        <Text style={styles.subtitle}>A forma mais facil e prazerosa de aprender uma lingua nova.</Text>
-        <Text style={styles.footer}>Aplicativo em versao de testes. Erros podem acontecer.</Text>
-      </View>
+      <ImageBackground source={require("../../../assets/Background Splash.png")} style={styles.background} resizeMode="cover">
+        <View style={styles.container}>
+          <Animated.Image
+            source={require("../../../assets/Logotipo Branco.png")}
+            style={[styles.logo, { opacity: logoOpacity, transform: [{ scale: logoScale }] }]}
+            resizeMode="contain"
+          />
+          <Animated.Text
+            style={[
+              styles.subtitle,
+              {
+                opacity: textOpacity,
+                transform: [{ translateY: textTranslate }],
+              },
+            ]}
+          >
+            A forma mais facil e prazerosa de aprender um novo idioma.
+          </Animated.Text>
+        </View>
+      </ImageBackground>
     </SafeAreaView>
   );
 };
 
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 24,
-    paddingVertical: 32,
-  },
-  logo: {
-    width: 160,
-    height: 60,
-    marginBottom: 8,
-  },
-  lottie: {
-    width: 200,
-    height: 200,
-  },
-  glow: {
-    position: "absolute",
-    width: 320,
-    height: 320,
-    borderRadius: 200,
-    backgroundColor: "rgba(57,126,255,0.12)",
-    top: 80,
-    alignSelf: "center",
-  },
-  title: {
-    fontSize: typography.heading + 8,
-    fontWeight: "700",
-    color: colors.primary,
-    marginTop: 12,
-    fontFamily: typography.fonts.heading,
-  },
-  subtitle: {
-    fontSize: typography.subheading,
-    color: colors.text,
-    marginTop: 4,
-    textAlign: "center",
-    fontFamily: typography.fonts.body,
-  },
-  footer: {
-    fontSize: typography.small,
-    color: colors.muted,
-    marginTop: 12,
-    textAlign: "center",
-    fontFamily: typography.fonts.body,
-  },
-});
+const createStyles = (colors) =>
+  StyleSheet.create({
+    safe: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    background: {
+      flex: 1,
+      width: "100%",
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    container: {
+      width: "100%",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 12,
+      paddingHorizontal: 24,
+    },
+    subtitle: {
+      fontSize: 16,
+      color: "#FFFFFF",
+      textAlign: "center",
+      fontFamily: "Manrope_400Regular",
+      width: 282,
+    },
+    logo: {
+      width: 282,
+      height: undefined,
+      aspectRatio: 282 / 84,
+    },
+  });
 
 export default SplashScreen;

@@ -1,4 +1,4 @@
-export const colors = {
+const light = {
   primary: "#397EFF",
   accent: "#FF675A",
   background: "#FFFFFF",
@@ -10,6 +10,23 @@ export const colors = {
   overlay: "rgba(17,24,39,0.05)",
   cardShadow: "rgba(17,24,39,0.08)",
 };
+
+const dark = {
+  primary: "#82A8FF",
+  accent: "#FF8A78",
+  background: "#0F172A",
+  surface: "#111827",
+  text: "#E5E7EB",
+  muted: "#9CA3AF",
+  gray: "#1F2937",
+  border: "#1F2937",
+  overlay: "rgba(255,255,255,0.04)",
+  cardShadow: "rgba(0,0,0,0.4)",
+};
+
+export const colors = { ...light };
+export const darkColors = { ...dark };
+export const lightColors = { ...light };
 
 export const spacing = {
   xs: 8,

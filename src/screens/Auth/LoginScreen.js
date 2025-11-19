@@ -1,15 +1,18 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useMemo, useState } from "react";
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Image, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
 import CustomButton from "../../components/CustomButton";
-import { AppContext } from "../../navigation/AppNavigator";
-import { colors, spacing, typography, radius } from "../../styles/theme";
+import { AppContext } from "../../context/AppContext";
+import { spacing, typography, radius } from "../../styles/theme";
 import { getDisplayName } from "../../utils/userName";
+import { useThemeColors } from "../../hooks/useThemeColors";
 
 const LoginScreen = ({ navigation }) => {
   const { setLevel, setUserName, userName, setUserEmail } = useContext(AppContext);
+  const theme = useThemeColors();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -40,21 +43,21 @@ const LoginScreen = ({ navigation }) => {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <LinearGradient colors={[colors.primary, colors.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
+          <LinearGradient colors={["#4F8BFF", "#FF6B64"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
             <View style={styles.heroTop}>
-              <Image source={require("../../../assets/Logotipo.png")} style={styles.logo} resizeMode="contain" />
+              <Image source={require("../../../assets/Logotipo Branco.png")} style={styles.logo} resizeMode="contain" />
               <View style={styles.badge}>
-                <Feather name="zap" size={14} color={colors.background} />
+                <Feather name="zap" size={14} color="#FFFFFF" />
                 <Text style={styles.badgeText}>Beta</Text>
               </View>
             </View>
-            <Text style={styles.title}>Bem-vindo a Linova</Text>
+            <Text style={styles.title}>Bem-vindo</Text>
             <Text style={styles.subtitle}>Entre e continue sua jornada</Text>
           </LinearGradient>
           <View style={styles.card}>
             <View style={styles.fieldHeader}>
               <Text style={styles.fieldLabel}>Email</Text>
-              <Feather name="mail" size={16} color={colors.muted} />
+              <Feather name="mail" size={16} color={theme.muted} />
             </View>
             <TextInput
               style={styles.input}
@@ -92,127 +95,131 @@ const LoginScreen = ({ navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-  },
-  safe: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  container: {
-    flexGrow: 1,
-    paddingHorizontal: spacing.layout,
-    paddingVertical: spacing.layout,
-    paddingBottom: spacing.layout * 1.5,
-    justifyContent: "flex-start",
-    gap: spacing.md,
-  },
-  hero: {
-    gap: spacing.xs,
-    marginBottom: spacing.lg,
-    padding: spacing.lg,
-    borderRadius: radius.lg,
-    shadowColor: colors.primary,
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 3,
-  },
-  title: {
-    fontSize: typography.heading + 4,
-    fontWeight: "700",
-    color: colors.background,
-    fontFamily: typography.fonts.heading,
-  },
-  logo: {
-    width: 140,
-    height: 40,
-    marginBottom: spacing.xs,
-  },
-  subtitle: {
-    fontSize: typography.subheading,
-    color: "#E8EDFF",
-    marginBottom: spacing.sm,
-    fontFamily: typography.fonts.body,
-  },
-  card: {
-    width: "100%",
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: spacing.lg,
-    gap: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  input: {
-    backgroundColor: colors.gray,
-    borderRadius: 12,
-    padding: spacing.md,
-    fontSize: typography.body,
-    color: colors.text,
-    fontFamily: typography.fonts.body,
-  },
-  linkWrapper: {
-    alignSelf: "flex-end",
-  },
-  link: {
-    color: colors.primary,
-    fontWeight: "600",
-    fontFamily: typography.fonts.body,
-  },
-  footerLinkWrapper: {
-    flexDirection: "row",
-    marginTop: spacing.lg,
-  },
-  footerText: {
-    fontSize: typography.body,
-    color: colors.text,
-    fontFamily: typography.fonts.body,
-  },
-  notice: {
-    marginTop: spacing.md,
-    fontSize: typography.small,
-    color: colors.muted,
-    fontFamily: typography.fonts.body,
-    textAlign: "center",
-  },
-  fieldHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  fieldLabel: {
-    color: colors.text,
-    fontFamily: typography.fonts.body,
-    fontWeight: "600",
-  },
-  fieldAction: {
-    color: colors.primary,
-    fontWeight: "700",
-  },
-  heroTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  badge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: radius.sm,
-  },
-  badgeText: {
-    color: colors.background,
-    fontSize: typography.small,
-    fontFamily: typography.fonts.body,
-  },
-});
+const createStyles = (theme) =>
+  StyleSheet.create({
+    flex: {
+      flex: 1,
+    },
+    safe: {
+      flex: 1,
+      backgroundColor: theme.background,
+    },
+    container: {
+      flexGrow: 1,
+      paddingHorizontal: spacing.layout,
+      paddingVertical: spacing.layout,
+      paddingBottom: spacing.layout * 1.5,
+      justifyContent: "flex-start",
+      gap: spacing.md,
+    },
+    hero: {
+      gap: spacing.xs,
+      marginBottom: spacing.lg,
+      padding: spacing.lg,
+      borderRadius: radius.lg,
+      shadowColor: theme.cardShadow,
+      shadowOpacity: 0.12,
+      shadowRadius: 12,
+      elevation: 3,
+      borderWidth: 1,
+      borderColor: "#63a6ff",
+    },
+    title: {
+      fontSize: typography.heading + 4,
+      fontWeight: "700",
+      color: "#FFFFFF",
+      fontFamily: typography.fonts.heading,
+    },
+    logo: {
+      width: 102,
+      height: undefined,
+      aspectRatio: 102 / 34,
+      marginBottom: 0,
+    },
+    subtitle: {
+      fontSize: typography.subheading,
+      color: "rgba(255,255,255,0.9)",
+      marginBottom: spacing.sm,
+      fontFamily: typography.fonts.body,
+    },
+    card: {
+      width: "100%",
+      backgroundColor: theme.surface,
+      borderRadius: 16,
+      padding: spacing.lg,
+      gap: spacing.md,
+      borderWidth: 1,
+      borderColor: theme.border,
+      shadowColor: theme.cardShadow,
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    input: {
+      backgroundColor: theme.gray,
+      borderRadius: 12,
+      padding: spacing.md,
+      fontSize: typography.body,
+      color: theme.text,
+      fontFamily: typography.fonts.body,
+    },
+    linkWrapper: {
+      alignSelf: "flex-end",
+    },
+    link: {
+      color: theme.primary,
+      fontWeight: "600",
+      fontFamily: typography.fonts.body,
+    },
+    footerLinkWrapper: {
+      flexDirection: "row",
+      marginTop: spacing.lg,
+    },
+    footerText: {
+      fontSize: typography.body,
+      color: theme.text,
+      fontFamily: typography.fonts.body,
+    },
+    notice: {
+      marginTop: spacing.md,
+      fontSize: typography.small,
+      color: theme.muted,
+      fontFamily: typography.fonts.body,
+      textAlign: "center",
+    },
+    fieldHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    fieldLabel: {
+      color: theme.text,
+      fontFamily: typography.fonts.body,
+      fontWeight: "600",
+    },
+    fieldAction: {
+      color: theme.primary,
+      fontWeight: "700",
+    },
+    heroTop: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    badge: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      backgroundColor: "rgba(255,255,255,0.25)",
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: radius.sm,
+    },
+    badgeText: {
+      color: "#FFFFFF",
+      fontSize: typography.small,
+      fontFamily: typography.fonts.body,
+    },
+  });
 
 export default LoginScreen;

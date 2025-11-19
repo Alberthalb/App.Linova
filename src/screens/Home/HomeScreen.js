@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
 import CustomButton from "../../components/CustomButton";
-import { AppContext } from "../../navigation/AppNavigator";
+import { AppContext } from "../../context/AppContext";
 import { colors, spacing, typography, radius } from "../../styles/theme";
 import { getDisplayName } from "../../utils/userName";
 
@@ -41,7 +41,6 @@ const HomeScreen = ({ navigation }) => {
 
         <View style={styles.actions}>
           <CustomButton title="Ver aulas" onPress={() => navigation.navigate("LessonList")} />
-          <CustomButton title="Gerenciar conta" variant="ghost" onPress={() => navigation.navigate("Account")} />
           <CustomButton title="Conversacao IA (visual)" variant="ghost" onPress={() => {}} />
         </View>
       </View>
@@ -87,6 +86,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+  },
+  heroLabel: {
+    fontSize: typography.subheading,
+    color: "#FFFFFF",
+    fontFamily: typography.fonts.body,
   },
   levelPill: {
     flexDirection: "row",
