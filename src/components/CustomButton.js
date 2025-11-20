@@ -1,38 +1,28 @@
 import React from "react";
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, View } from "react-native";
 import { spacing, typography, radius } from "../styles/theme";
 import { useThemeColors } from "../hooks/useThemeColors";
 
 const CustomButton = ({ title, onPress, disabled = false, loading = false, style, variant = "primary" }) => {
   const colors = useThemeColors();
   const isPrimary = variant === "primary";
-  const Container = isPrimary ? LinearGradient : TouchableOpacity;
 
   const content = loading ? (
-    <ActivityIndicator color={isPrimary ? colors.background : colors.primary} />
+    <ActivityIndicator color={isPrimary ? colors.background : colors.accent} />
   ) : (
-    <Text style={[styles.title, !isPrimary && { color: colors.primary }]}>{title}</Text>
+    <Text style={[styles.title, !isPrimary && { color: colors.accent }]}>{title}</Text>
   );
 
-  if (isPrimary) {
-    return (
-      <TouchableOpacity style={[styles.touchable, style]} onPress={onPress} activeOpacity={0.9} disabled={disabled || loading}>
-        <Container colors={[colors.primary, colors.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.button, disabled && styles.disabled]}>
-          {content}
-        </Container>
-      </TouchableOpacity>
-    );
-  }
+  const buttonStyle = [
+    styles.button,
+    isPrimary ? { backgroundColor: colors.accent } : [styles.ghost, { borderColor: colors.accent }],
+    disabled && styles.disabled,
+    style,
+  ];
 
   return (
-    <TouchableOpacity
-      style={[styles.button, styles.ghost, { borderColor: colors.primary }, disabled ? styles.disabled : null, style]}
-      onPress={onPress}
-      activeOpacity={0.85}
-      disabled={disabled || loading}
-    >
-      {content}
+    <TouchableOpacity style={styles.touchable} onPress={onPress} activeOpacity={0.9} disabled={disabled || loading}>
+      <View style={buttonStyle}>{content}</View>
     </TouchableOpacity>
   );
 };

@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-nati
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Video } from "expo-av";
 import { Feather } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import CustomButton from "../../components/CustomButton";
 import { spacing, typography, radius } from "../../styles/theme";
 import { useThemeColors } from "../../hooks/useThemeColors";
@@ -35,7 +34,7 @@ const LessonScreen = ({ route, navigation }) => {
           </View>
         </View>
         <View style={styles.videoWrapper}>
-          <LinearGradient colors={[theme.overlay, "transparent"]} style={styles.videoOverlay} />
+          <View style={styles.videoOverlay} />
           <View style={styles.videoBadge}>
             <Feather name="play-circle" size={16} color={theme.background} />
             <Text style={styles.videoBadgeText}>Player em desenvolvimento</Text>
@@ -115,6 +114,7 @@ const createStyles = (colors) =>
       right: 0,
       height: 120,
       zIndex: 1,
+      backgroundColor: colors.overlay,
     },
     videoBadge: {
       position: "absolute",

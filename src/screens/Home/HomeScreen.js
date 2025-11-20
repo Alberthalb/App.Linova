@@ -1,7 +1,6 @@
 import React, { useContext, useMemo, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Modal } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
 import CustomButton from "../../components/CustomButton";
 import { AppContext } from "../../context/AppContext";
@@ -23,7 +22,7 @@ const HomeScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right", "bottom"]}>
       <View style={styles.container}>
-        <LinearGradient colors={[theme.primary, theme.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
+        <View style={[styles.hero, { backgroundColor: theme.primary }]}>
           <View style={styles.heroRow}>
             <View>
               <Text style={styles.heroLabel}>Bem-vindo</Text>
@@ -45,7 +44,7 @@ const HomeScreen = ({ navigation }) => {
               <Text style={styles.heroChipText}>IA em breve</Text>
             </TouchableOpacity>
           </View>
-        </LinearGradient>
+        </View>
 
         <View style={styles.actions}>
           <CustomButton title="Ver aulas" onPress={() => navigation.navigate("LessonList")} />

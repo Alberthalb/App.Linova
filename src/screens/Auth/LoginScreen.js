@@ -1,7 +1,6 @@
 import React, { useContext, useMemo, useState } from "react";
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Image, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
 import CustomButton from "../../components/CustomButton";
 import { AppContext } from "../../context/AppContext";
@@ -29,7 +28,7 @@ const LoginScreen = ({ navigation }) => {
       setUserName(derivedName);
       setUserEmail(email);
       setLoading(false);
-      navigation.replace("LevelQuiz");
+      navigation.replace("MainTabs");
     }, 400);
   };
 
@@ -43,7 +42,7 @@ const LoginScreen = ({ navigation }) => {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <LinearGradient colors={["#4F8BFF", "#FF6B64"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
+          <View style={styles.hero}>
             <View style={styles.heroTop}>
               <Image source={require("../../../assets/Logotipo Branco.png")} style={styles.logo} resizeMode="contain" />
               <View style={styles.badge}>
@@ -53,7 +52,7 @@ const LoginScreen = ({ navigation }) => {
             </View>
             <Text style={styles.title}>Bem-vindo</Text>
             <Text style={styles.subtitle}>Entre e continue sua jornada</Text>
-          </LinearGradient>
+          </View>
           <View style={styles.card}>
             <View style={styles.fieldHeader}>
               <Text style={styles.fieldLabel}>Email</Text>
@@ -117,12 +116,13 @@ const createStyles = (theme) =>
       marginBottom: spacing.lg,
       padding: spacing.lg,
       borderRadius: radius.lg,
+      backgroundColor: theme.primary,
       shadowColor: theme.cardShadow,
       shadowOpacity: 0.12,
       shadowRadius: 12,
       elevation: 3,
       borderWidth: 1,
-      borderColor: "#63a6ff",
+      borderColor: theme.accent,
     },
     title: {
       fontSize: typography.heading + 4,

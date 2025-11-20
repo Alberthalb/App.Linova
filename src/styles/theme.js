@@ -1,15 +1,15 @@
 const light = {
-  primary: "#397EFF",
-  accent: "#FF675A",
-  background: "#FFFFFF",
-  surface: "#F5F7FB",
+  primary: "#3D7FFC",
+  accent: "#FF6B5C",
+  background: "#FFF4F0",
+  surface: "#FFFFFF",
   text: "#111827",
   textSecondary: "#4B5563",
   muted: "#6B7280",
-  gray: "#E5E7EB",
-  border: "#E5E7EB",
+  gray: "#F3E6E0",
+  border: "#FFD8CD",
   overlay: "rgba(17,24,39,0.05)",
-  cardShadow: "rgba(17,24,39,0.08)",
+  cardShadow: "rgba(61,127,252,0.15)",
 };
 
 const dark = {

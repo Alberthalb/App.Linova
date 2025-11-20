@@ -1,7 +1,6 @@
 import React, { useContext, useMemo, useState } from "react";
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Image, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
 import CustomButton from "../../components/CustomButton";
 import { spacing, typography, radius } from "../../styles/theme";
@@ -25,8 +24,8 @@ const RegisterScreen = ({ navigation }) => {
     const derivedName = getDisplayName(name, email);
     setUserName(derivedName);
     setUserEmail(email);
-    Alert.alert("Conta criada", "Login liberado com suas credenciais em desenvolvimento.");
-    navigation.replace("Login");
+    Alert.alert("Conta criada", "Vamos descobrir seu nivel para personalizar o conteudo.");
+    navigation.replace("LevelQuiz");
   };
 
   return (
@@ -39,7 +38,7 @@ const RegisterScreen = ({ navigation }) => {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <LinearGradient colors={[theme.primary, theme.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
+          <View style={styles.hero}>
             <View style={styles.heroRow}>
               <Image source={require("../../../assets/icon.png")} style={styles.logo} resizeMode="contain" />
               <View style={styles.badge}>
@@ -49,7 +48,7 @@ const RegisterScreen = ({ navigation }) => {
             </View>
             <Text style={styles.title}>Crie sua conta</Text>
             <Text style={styles.subtitle}>Avance para desbloquear o quiz inicial.</Text>
-          </LinearGradient>
+          </View>
           <View style={styles.card}>
             <View style={styles.fieldHeader}>
               <Text style={styles.fieldLabel}>Nome completo</Text>
@@ -103,11 +102,14 @@ const createStyles = (theme) =>
       gap: spacing.xs,
       padding: spacing.lg,
       borderRadius: radius.lg,
+      backgroundColor: theme.primary,
       marginBottom: spacing.lg,
       shadowColor: theme.cardShadow,
       shadowOpacity: 0.12,
       shadowRadius: 12,
       elevation: 3,
+      borderWidth: 1,
+      borderColor: theme.accent,
     },
     title: {
       fontSize: typography.heading + 2,
