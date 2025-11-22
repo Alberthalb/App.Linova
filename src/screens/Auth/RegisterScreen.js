@@ -7,6 +7,8 @@ import { spacing, typography, radius } from "../../styles/theme";
 import { AppContext } from "../../context/AppContext";
 import { getDisplayName } from "../../utils/userName";
 import { useThemeColors } from "../../hooks/useThemeColors";
+import { registerUser } from "../../services/authService";
+import { getFirebaseAuthErrorMessage } from "../../utils/firebaseErrorMessage";
 
 const RegisterScreen = ({ navigation }) => {
   const { setUserName, setUserEmail } = useContext(AppContext);
@@ -15,17 +17,28 @@ const RegisterScreen = ({ navigation }) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleRegister = () => {
-    if (!name.trim() || !email.trim() || !password.trim()) {
-      Alert.alert("Campos obrigatorios", "Preencha todas as informacoes para criar sua conta.");
+  const handleRegister = async () => {
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+    if (!trimmedName || !trimmedEmail || !password.trim()) {
+      Alert.alert("Campos obrigatórios", "Preencha todas as informações para criar sua conta.");
       return;
     }
-    const derivedName = getDisplayName(name, email);
-    setUserName(derivedName);
-    setUserEmail(email);
-    Alert.alert("Conta criada", "Vamos descobrir seu nivel para personalizar o conteudo.");
-    navigation.replace("LevelQuiz");
+    setLoading(true);
+    try {
+      await registerUser(trimmedName, trimmedEmail, password);
+      const derivedName = getDisplayName(trimmedName, trimmedEmail);
+      setUserName(derivedName);
+      setUserEmail(trimmedEmail);
+      Alert.alert("Conta criada", "Vamos descobrir seu nível para personalizar o conteúdo.");
+      navigation.replace("LevelQuiz");
+    } catch (error) {
+      Alert.alert("Erro ao cadastrar", getFirebaseAuthErrorMessage(error));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -69,7 +82,7 @@ const RegisterScreen = ({ navigation }) => {
               <Text style={styles.fieldLabel}>Senha</Text>
             </View>
             <TextInput style={styles.input} placeholder="Senha" value={password} onChangeText={setPassword} secureTextEntry />
-            <CustomButton title="Cadastrar" onPress={handleRegister} />
+            <CustomButton title="Cadastrar" onPress={handleRegister} loading={loading} disabled={loading} />
           </View>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.footerLinkWrapper}>
             <Text style={styles.footerText}>Ja tem conta? </Text>

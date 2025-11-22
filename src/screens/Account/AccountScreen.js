@@ -7,6 +7,8 @@ import { AppContext } from "../../context/AppContext";
 import { spacing, typography, radius } from "../../styles/theme";
 import { getDisplayName } from "../../utils/userName";
 import { useThemeColors } from "../../hooks/useThemeColors";
+import { logoutUser } from "../../services/authService";
+import { getFirebaseAuthErrorMessage } from "../../utils/firebaseErrorMessage";
 
 const AccountScreen = ({ navigation }) => {
   const { userName, setUserName, userEmail, setUserEmail, level, setLevel } = useContext(AppContext);
@@ -23,6 +25,16 @@ const AccountScreen = ({ navigation }) => {
     setUserName(display);
     setUserEmail(email);
     Alert.alert("Perfil atualizado", "Seu nome e email foram atualizados (em desenvolvimento).");
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+      const rootNavigator = navigation.getParent()?.getParent();
+      rootNavigator?.reset({ index: 0, routes: [{ name: "Welcome" }] });
+    } catch (error) {
+      Alert.alert("Erro ao sair", getFirebaseAuthErrorMessage(error));
+    }
   };
 
   const handleSummaryPress = (type) => {

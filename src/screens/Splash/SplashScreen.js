@@ -1,11 +1,13 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useContext, useEffect, useMemo, useRef } from "react";
 import { View, Text, StyleSheet, ImageBackground, Animated } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { typography } from "../../styles/theme";
 import { useThemeColors } from "../../hooks/useThemeColors";
+import { AppContext } from "../../context/AppContext";
 
 const SplashScreen = ({ navigation }) => {
   const colors = useThemeColors();
+  const { currentUser, authReady } = useContext(AppContext);
   const styles = useMemo(() => createStyles(colors), [colors]);
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const logoScale = useRef(new Animated.Value(0.9)).current;
@@ -23,12 +25,15 @@ const SplashScreen = ({ navigation }) => {
         Animated.timing(textTranslate, { toValue: 0, duration: 500, useNativeDriver: true }),
       ]),
     ]).start();
+  }, [logoOpacity, logoScale, textOpacity, textTranslate]);
 
+  useEffect(() => {
+    if (!authReady) return undefined;
     const timer = setTimeout(() => {
-      navigation.replace("Welcome");
+      navigation.replace(currentUser ? "MainTabs" : "Welcome");
     }, 2000);
     return () => clearTimeout(timer);
-  }, [navigation, logoOpacity, logoScale, textOpacity, textTranslate]);
+  }, [navigation, currentUser, authReady]);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right", "bottom"]}>

@@ -1,18 +1,24 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { NavigationContainer, useNavigationState, DefaultTheme, DarkTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Animated, useColorScheme, StatusBar } from "react-native";
+import * as Linking from "expo-linking";
 import { typography, lightColors, darkColors } from "../styles/theme";
 import { useThemeColors } from "../hooks/useThemeColors";
 import useTabSwipeNavigation from "../hooks/useTabSwipeNavigation";
 import { AppContext } from "../context/AppContext";
+import { auth } from "../services/firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { createOrUpdateUserProfile, getUserProfile } from "../services/userService";
+import { getDisplayName } from "../utils/userName";
 import SplashScreen from "../screens/Splash/SplashScreen";
 import LoginScreen from "../screens/Auth/LoginScreen";
 import RegisterScreen from "../screens/Auth/RegisterScreen";
 import ForgotPasswordScreen from "../screens/Auth/ForgotPasswordScreen";
+import ResetPasswordScreen from "../screens/Auth/ResetPasswordScreen";
 import LevelQuizScreen from "../screens/Onboarding/LevelQuizScreen";
 import WelcomeScreen from "../screens/Onboarding/WelcomeScreen";
 import HomeScreen from "../screens/Home/HomeScreen";
@@ -124,9 +130,84 @@ const AppNavigator = () => {
   const [userName, setUserName] = useState("Linova");
   const [userEmail, setUserEmail] = useState("");
   const [darkMode, setDarkMode] = useState(null);
+  const navigationRef = useRef(null);
+  const pendingResetCode = useRef(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
   const systemScheme = useColorScheme();
   const isDark = darkMode === null ? systemScheme === "dark" : darkMode;
   const palette = isDark ? darkColors : lightColors;
+
+  const navigateWithResetCode = (code) => {
+    if (!code) return;
+    if (navigationRef.current) {
+      navigationRef.current.navigate("ResetPassword", { code });
+    } else {
+      pendingResetCode.current = code;
+    }
+  };
+
+  useEffect(() => {
+    const extractCode = (url) => {
+      if (!url) return null;
+      try {
+        const parsed = Linking.parse(url);
+        const queryCode = parsed?.queryParams?.oobCode || parsed?.queryParams?.oobcode;
+        if (queryCode) return queryCode;
+        if (parsed?.fragment) {
+          const params = new URLSearchParams(parsed.fragment.replace("#", ""));
+          return params.get("oobCode") || params.get("oobcode");
+        }
+      } catch (error) {
+        return null;
+      }
+      return null;
+    };
+
+    const handleUrl = (incomingUrl) => {
+      const code = extractCode(incomingUrl);
+      if (code) {
+        navigateWithResetCode(code);
+      }
+    };
+
+    Linking.getInitialURL().then(handleUrl).catch(() => null);
+    const subscription = Linking.addEventListener("url", (event) => handleUrl(event.url));
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setCurrentUser(user);
+      if (user) {
+        setUserEmail(user.email || "");
+        try {
+          const profile = await getUserProfile(user.uid);
+          if (profile?.name) {
+            setUserName(getDisplayName(profile.name, user.email));
+          } else {
+            setUserName(getDisplayName(user.displayName, user.email));
+          }
+          if (typeof profile?.level !== "undefined") {
+            setLevel(profile.level);
+          }
+          await createOrUpdateUserProfile(user.uid, {
+            name: profile?.name || user.displayName || "",
+            email: user.email || profile?.email || "",
+          });
+        } catch (error) {
+          console.warn("[Auth] Falha ao carregar perfil:", error);
+          setUserName(getDisplayName(user.displayName, user.email));
+        }
+      } else {
+        setUserEmail("");
+        setUserName("Linova");
+        setLevel(null);
+      }
+      setAuthReady(true);
+    });
+    return unsubscribe;
+  }, []);
 
   const contextValue = useMemo(
     () => ({
@@ -139,8 +220,11 @@ const AppNavigator = () => {
       darkMode,
       setDarkMode,
       isDarkMode: isDark,
+      currentUser,
+      setCurrentUser,
+      authReady,
     }),
-    [level, userName, userEmail, darkMode, isDark]
+    [level, userName, userEmail, darkMode, isDark, currentUser, authReady]
   );
 
   const navigationTheme = useMemo(() => {
@@ -161,7 +245,16 @@ const AppNavigator = () => {
   return (
     <AppContext.Provider value={contextValue}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={palette.background} />
-      <NavigationContainer theme={navigationTheme}>
+      <NavigationContainer
+        theme={navigationTheme}
+        ref={navigationRef}
+        onReady={() => {
+          if (pendingResetCode.current) {
+            navigateWithResetCode(pendingResetCode.current);
+            pendingResetCode.current = null;
+          }
+        }}
+      >
         <Stack.Navigator
           initialRouteName="Splash"
           screenOptions={{
@@ -175,6 +268,7 @@ const AppNavigator = () => {
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Register" component={RegisterScreen} />
           <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+          <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
           <Stack.Screen name="LevelQuiz" component={LevelQuizScreen} />
           <Stack.Screen name="MainTabs" component={MainTabs} />
         </Stack.Navigator>

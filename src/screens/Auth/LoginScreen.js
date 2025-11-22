@@ -7,6 +7,8 @@ import { AppContext } from "../../context/AppContext";
 import { spacing, typography, radius } from "../../styles/theme";
 import { getDisplayName } from "../../utils/userName";
 import { useThemeColors } from "../../hooks/useThemeColors";
+import { loginUser } from "../../services/authService";
+import { getFirebaseAuthErrorMessage } from "../../utils/firebaseErrorMessage";
 
 const LoginScreen = ({ navigation }) => {
   const { setLevel, setUserName, userName, setUserEmail } = useContext(AppContext);
@@ -18,20 +20,24 @@ const LoginScreen = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert("Campos obrigatorios", "Preencha email e senha para continuar.");
+      Alert.alert("Campos obrigatórios", "Preencha email e senha para continuar.");
       return;
     }
     setLoading(true);
-    setTimeout(() => {
-      setLevel(null); // reset onboarding level for a fresh start
+    try {
+      await loginUser(email.trim(), password);
       const derivedName = getDisplayName(null, email, userName);
       setUserName(derivedName);
       setUserEmail(email);
-      setLoading(false);
+      setLevel(null);
       navigation.replace("MainTabs");
-    }, 400);
+    } catch (error) {
+      Alert.alert("Erro ao entrar", getFirebaseAuthErrorMessage(error));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEmailStep = () => {
@@ -61,7 +67,7 @@ const LoginScreen = ({ navigation }) => {
           </View>
           <View style={styles.headerText}>
             <Text style={styles.title}>{isEmailStep ? "Qual é o seu email?" : "Agora digite sua senha"}</Text>
-            <Text style={styles.subtitle}>{isEmailStep ? "Usaremos esse email para localizar seu progresso." : email}</Text>
+              <Text style={styles.subtitle}>{isEmailStep ? "Usaremos esse email para localizar seu progresso." : email}</Text>
           </View>
           {isEmailStep ? (
             <View style={styles.inputRow}>

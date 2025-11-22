@@ -10,4 +10,7 @@ export const AppContext = createContext({
   darkMode: null,
   setDarkMode: () => {},
   isDarkMode: false,
+  currentUser: null,
+  setCurrentUser: () => {},
+  authReady: false,
 });
