@@ -58,6 +58,7 @@ const LessonScreen = ({ route, navigation }) => {
   const [currentSubtitle, setCurrentSubtitle] = useState("");
   const [showSubtitles, setShowSubtitles] = useState(true);
   const [loading, setLoading] = useState(!lesson);
+  const [duration, setDuration] = useState(null);
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const videoRef = useRef(null);
@@ -106,6 +107,9 @@ const LessonScreen = ({ route, navigation }) => {
   }, [lesson]);
 
   const handlePlaybackStatusUpdate = (status) => {
+    if (status.isLoaded && status.durationMillis && duration === null) {
+      setDuration(status.durationMillis);
+    }
     if (!status.isLoaded || !subtitleSegments.length) return;
     const { positionMillis } = status;
     const active = subtitleSegments.find(
@@ -138,7 +142,13 @@ const LessonScreen = ({ route, navigation }) => {
               </View>
               <View style={styles.tag}>
                 <Feather name="clock" size={14} color={theme.background} />
-                <Text style={styles.tagText}>{lesson?.duration || "10 min"}</Text>
+                <Text style={styles.tagText}>
+                  {duration
+                    ? duration >= 60000
+                      ? `${Math.ceil(duration / 60000)} min`
+                      : `${Math.floor(duration / 1000)} s`
+                    : lesson?.duration || "10 min"}
+                </Text>
               </View>
             </View>
             <View style={styles.videoWrapper}>
