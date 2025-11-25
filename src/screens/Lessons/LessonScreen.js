@@ -1,11 +1,13 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
+import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Video } from "expo-av";
 import { Feather } from "@expo/vector-icons";
 import CustomButton from "../../components/CustomButton";
 import { spacing, typography, radius } from "../../styles/theme";
 import { useThemeColors } from "../../hooks/useThemeColors";
+import { AppContext } from "../../context/AppContext";
+import { canAccessLevel } from "../../utils/levels";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db, storage } from "../../services/firebase";
 import { getDownloadURL, ref } from "firebase/storage";
@@ -59,6 +61,7 @@ const LessonScreen = ({ route, navigation }) => {
   const [showSubtitles, setShowSubtitles] = useState(true);
   const [loading, setLoading] = useState(!lesson);
   const [duration, setDuration] = useState(null);
+  const { level: userLevel } = useContext(AppContext);
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const videoRef = useRef(null);
@@ -119,6 +122,32 @@ const LessonScreen = ({ route, navigation }) => {
     if (text !== currentSubtitle) {
       setCurrentSubtitle(text);
     }
+  };
+
+  const isLessonAccessible = canAccessLevel(userLevel, lesson?.level);
+
+  useEffect(() => {
+    if (!lesson || !userLevel || !lesson.level || isLessonAccessible) return;
+    Alert.alert(
+      "Conteudo bloqueado",
+      `Esta aula pertence ao nivel ${lesson.level}. Complete seu nivel atual (${userLevel}) para desbloquear.`,
+      [{ text: "Ok", onPress: () => navigation.goBack() }]
+    );
+  }, [isLessonAccessible, lesson, navigation, userLevel]);
+
+  const handleQuizPress = () => {
+    if (!isLessonAccessible) {
+      Alert.alert(
+        "Conteudo bloqueado",
+        `Esta aula pertence ao nivel ${lesson?.level || "superior"}. Complete seu nivel atual (${userLevel}) para desbloquear.`
+      );
+      return;
+    }
+    navigation.navigate("LessonQuiz", {
+      lessonId: lesson?.id || lessonId,
+      lessonTitle: lesson?.title,
+      lessonLevel: lesson?.level,
+    });
   };
 
   return (
@@ -189,10 +218,7 @@ const LessonScreen = ({ route, navigation }) => {
                 <Text style={styles.body}>{lesson.transcript}</Text>
               </View>
             )}
-            <CustomButton
-              title="Fazer quiz"
-              onPress={() => navigation.navigate("LessonQuiz", { lessonId: lesson?.id || lessonId, lessonTitle: lesson?.title })}
-            />
+            <CustomButton title="Fazer quiz" onPress={handleQuizPress} />
           </>
         )}
       </ScrollView>

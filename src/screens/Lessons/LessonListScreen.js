@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useMemo, useState } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ActivityIndicator, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { spacing, typography, radius } from "../../styles/theme";
@@ -8,6 +8,7 @@ import { getDisplayName } from "../../utils/userName";
 import { useThemeColors } from "../../hooks/useThemeColors";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import { db } from "../../services/firebase";
+import { canAccessLevel } from "../../utils/levels";
 
 const LessonListScreen = ({ navigation }) => {
   const { userName, level: currentLevel } = useContext(AppContext);
@@ -59,12 +60,19 @@ const LessonListScreen = ({ navigation }) => {
     }
   }, [currentLevel]);
 
+  const handleLessonPress = (item) => {
+    if (!canAccessLevel(currentLevel, item.level)) {
+      Alert.alert(
+        "Aula indisponivel",
+        `Esta aula pertence ao nivel ${item.level}. Complete seu nivel atual (${currentLevel}) para desbloquear.`,
+      );
+      return;
+    }
+    navigation.navigate("Lesson", { lessonId: item.id });
+  };
+
   const renderItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => navigation.navigate("Lesson", { lessonId: item.id })}
-      activeOpacity={0.85}
-    >
+    <TouchableOpacity style={styles.card} onPress={() => handleLessonPress(item)} activeOpacity={0.85}>
       <Text style={styles.title}>{item.title}</Text>
       <Text style={styles.level}>Nivel: {item.level}</Text>
     </TouchableOpacity>

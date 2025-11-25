@@ -11,11 +11,12 @@ import { collection, doc, getDocs, onSnapshot, query, where } from "firebase/fir
 import { db } from "../../services/firebase";
 import { AppContext } from "../../context/AppContext";
 import { createOrUpdateUserProfile, saveLessonProgress } from "../../services/userService";
+import { LEVEL_SEQUENCE, getNextLevel, canAccessLevel } from "../../utils/levels";
 
 const STORAGE_KEY = "@linova:lessonProgress";
-const LEVEL_SEQUENCE = ["Discoverer", "Pathfinder", "Communicator", "Connector", "Storyteller"];
 
-const getProgressKey = (uid) => (uid ? `${STORAGE_KEY}:${uid}` : STORAGE_KEY);
+const sanitizeKey = (key) => key.replace(/[^a-zA-Z0-9._-]/g, "-");
+const getProgressKey = (uid) => sanitizeKey(uid ? `${STORAGE_KEY}_${uid}` : STORAGE_KEY);
 
 const readProgressFromStorage = async (key) => {
   try {
@@ -149,16 +150,12 @@ const normalizeQuiz = (quizData) => {
   });
 };
 
-const getNextLevel = (level) => {
-  const index = LEVEL_SEQUENCE.indexOf(level);
-  if (index === -1 || index >= LEVEL_SEQUENCE.length - 1) return null;
-  return LEVEL_SEQUENCE[index + 1];
-};
-
 const LessonQuizScreen = ({ navigation, route }) => {
   const lessonId = route?.params?.lessonId ?? 0;
   const lessonTitle = route?.params?.lessonTitle ?? "Aula";
   const { currentUser, level, setLevel } = useContext(AppContext);
+  const [lessonLevel, setLessonLevel] = useState(route?.params?.lessonLevel || null);
+  const [accessDenied, setAccessDenied] = useState(false);
   const [questions, setQuestions] = useState([]);
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -209,6 +206,9 @@ const LessonQuizScreen = ({ navigation, route }) => {
       docRef,
       (snapshot) => {
         const data = snapshot.data();
+        if (data?.level && data.level !== lessonLevel) {
+          setLessonLevel(data.level);
+        }
         const quizData = normalizeQuiz(data?.quiz || []);
         setQuestions(quizData);
         setStep(0);
@@ -219,6 +219,18 @@ const LessonQuizScreen = ({ navigation, route }) => {
     );
     return unsubscribe;
   }, [lessonId]);
+
+  useEffect(() => {
+    if (accessDenied) return;
+    if (!level || !lessonLevel) return;
+    if (canAccessLevel(level, lessonLevel)) return;
+    setAccessDenied(true);
+    Alert.alert(
+      "Quiz bloqueado",
+      `Este quiz pertence ao nivel ${lessonLevel}. Complete seu nivel atual (${level}) para desbloquear.`,
+      [{ text: "Ok", onPress: () => navigation.goBack() }]
+    );
+  }, [accessDenied, lessonLevel, level, navigation]);
 
   const goNext = async () => {
     if (!currentQuestion) {

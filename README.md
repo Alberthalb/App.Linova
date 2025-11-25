@@ -38,8 +38,8 @@ O `app.config.js` le automaticamente o `.env` e injeta as credenciais em `expo.e
 1. Splash + Welcome: decide entre onboarding ou area logada conforme o usuario.
 2. Quiz de nivel: sugere um perfil (Discoverer ate Storyteller) e salva o resultado no Firestore.
 3. Home: dashboard com boas-vindas, estatisticas e atalhos para a trilha.
-4. Lista de aulas: consome `lessons` do Firestore em tempo real, com filtro por nivel e busca textual.
-5. Aula: player com video do Storage, legendas `.vtt`, transcricao e botao para o quiz.
+4. Lista de aulas: consome `lessons` do Firestore em tempo real, com filtro por nivel e busca textual. O aluno pode rever aulas de niveis anteriores, mas conteudos de niveis superiores ficam bloqueados.
+5. Aula: player com video do Storage, legendas `.vtt`, transcricao e botao para o quiz (liberado apenas para niveis ja desbloqueados).
 6. Quiz da aula: normaliza qualquer estrutura enviada pelo Firestore, salva progresso (SecureStore + Firestore) e mostra pontuacao final. Ao completar todas as aulas do nivel atual com >=70% de acerto, o app promove automaticamente o aluno para o proximo nivel.
 7. Conta e configuracoes: atualiza perfil, troca senha, exclui conta e alterna tema.
 
