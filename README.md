@@ -1,6 +1,6 @@
 # Linova - MVP de Aprendizado de Ingles
 
-Aplicativo mobile construido com Expo + React Native para treinar ingles com aulas em video, legendas, transcricoes e quizzes. Este repositorio reune todas as telas do MVP (onboarding, login, trilha de aulas e area do aluno) e serve como vitrine no meu portfolio.
+Aplicativo mobile construido com Expo + React Native para treinar ingles com aulas em video, legendas, transcricoes e quizzes. Este repositorio reune todas as telas do MVP (onboarding, login, trilha de aulas e area do aluno).
 
 ## Destaques
 - Onboarding com quiz de nivelamento que recomenda onde o aluno deve iniciar.
@@ -53,5 +53,3 @@ O `app.config.js` le automaticamente o `.env` e injeta as credenciais em `expo.e
 - Explorar gravacoes curtas demonstrando o player com legendas e o quiz.
 - Disponibilizar um mock de dados para quem quiser testar sem Firebase.
 
-## Contato
-Este MVP nasceu para um projeto proprietario, mas estou aberto a feedbacks, reviews e parcerias. Abra uma issue ou me envie uma mensagem para conversar.
