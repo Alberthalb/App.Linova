@@ -7,12 +7,13 @@ import CustomButton from "../../components/CustomButton";
 import { spacing, typography, radius } from "../../styles/theme";
 import { Feather } from "@expo/vector-icons";
 import { useThemeColors } from "../../hooks/useThemeColors";
-import { doc, onSnapshot } from "firebase/firestore";
+import { collection, doc, getDocs, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "../../services/firebase";
 import { AppContext } from "../../context/AppContext";
-import { saveLessonProgress } from "../../services/userService";
+import { createOrUpdateUserProfile, saveLessonProgress } from "../../services/userService";
 
 const STORAGE_KEY = "@linova:lessonProgress";
+const LEVEL_SEQUENCE = ["Discoverer", "Pathfinder", "Communicator", "Connector", "Storyteller"];
 
 const getProgressKey = (uid) => (uid ? `${STORAGE_KEY}:${uid}` : STORAGE_KEY);
 
@@ -148,10 +149,16 @@ const normalizeQuiz = (quizData) => {
   });
 };
 
+const getNextLevel = (level) => {
+  const index = LEVEL_SEQUENCE.indexOf(level);
+  if (index === -1 || index >= LEVEL_SEQUENCE.length - 1) return null;
+  return LEVEL_SEQUENCE[index + 1];
+};
+
 const LessonQuizScreen = ({ navigation, route }) => {
   const lessonId = route?.params?.lessonId ?? 0;
   const lessonTitle = route?.params?.lessonTitle ?? "Aula";
-  const { currentUser } = useContext(AppContext);
+  const { currentUser, level, setLevel } = useContext(AppContext);
   const [questions, setQuestions] = useState([]);
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -165,6 +172,31 @@ const LessonQuizScreen = ({ navigation, route }) => {
 
   const selectOption = (optionIndex) => {
     setAnswers((prev) => ({ ...prev, [currentQuestion.id]: optionIndex }));
+  };
+
+  const promoteIfEligible = async () => {
+    if (!currentUser?.uid || !level) return null;
+    const nextLevel = getNextLevel(level);
+    if (!nextLevel) return null;
+    try {
+      const lessonsSnapshot = await getDocs(query(collection(db, "lessons"), where("level", "==", level)));
+      const lessonIds = lessonsSnapshot.docs.map((docSnap) => docSnap.id);
+      if (!lessonIds.length) return null;
+      const progressSnapshot = await getDocs(collection(db, "users", currentUser.uid, "lessonsCompleted"));
+      const progressMap = new Map(progressSnapshot.docs.map((docSnap) => [docSnap.id, docSnap.data()]));
+      const completedAll = lessonIds.every((id) => {
+        const entry = progressMap.get(id);
+        const score = typeof entry?.score === "number" ? entry.score : Number(entry?.score) || 0;
+        return score >= 70;
+      });
+      if (!completedAll) return null;
+      await createOrUpdateUserProfile(currentUser.uid, { level: nextLevel });
+      setLevel(nextLevel);
+      return nextLevel;
+    } catch (error) {
+      console.warn("[Lesson] Falha ao avaliar promocao:", error);
+      return null;
+    }
   };
 
   useEffect(() => {
@@ -223,7 +255,15 @@ const LessonQuizScreen = ({ navigation, route }) => {
           answers,
         });
       }
-      Alert.alert("Progresso salvo", `Voce acertou ${correctAnswers}/${total} (${score}%).`, [
+      let promotedLevel = null;
+      if (currentUser?.uid) {
+        promotedLevel = await promoteIfEligible();
+      }
+      const title = promotedLevel ? "Parabens!" : "Progresso salvo";
+      const message = promotedLevel
+        ? `Voce acertou ${correctAnswers}/${total} (${score}%) e avancou para o nivel ${promotedLevel}!`
+        : `Voce acertou ${correctAnswers}/${total} (${score}%).`;
+      Alert.alert(title, message, [
         { text: "Ok", onPress: () => navigation.navigate("LessonList") },
       ]);
     } catch (error) {
