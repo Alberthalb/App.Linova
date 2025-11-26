@@ -3,7 +3,7 @@ import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, View } from "rea
 import { spacing, typography, radius } from "../styles/theme";
 import { useThemeColors } from "../hooks/useThemeColors";
 
-const CustomButton = ({ title, onPress, disabled = false, loading = false, style, variant = "primary" }) => {
+const CustomButton = ({ title, onPress, disabled = false, loading = false, style, containerStyle, variant = "primary" }) => {
   const colors = useThemeColors();
   const isPrimary = variant === "primary";
 
@@ -21,7 +21,12 @@ const CustomButton = ({ title, onPress, disabled = false, loading = false, style
   ];
 
   return (
-    <TouchableOpacity style={styles.touchable} onPress={onPress} activeOpacity={0.9} disabled={disabled || loading}>
+    <TouchableOpacity
+      style={[styles.touchable, containerStyle]}
+      onPress={onPress}
+      activeOpacity={0.9}
+      disabled={disabled || loading}
+    >
       <View style={buttonStyle}>{content}</View>
     </TouchableOpacity>
   );

@@ -130,7 +130,13 @@ const LoginScreen = ({ navigation }) => {
               <View style={[styles.dot, !isEmailStep && styles.dotActive]} />
             </View>
             {!isEmailStep && (
-              <CustomButton title="Entrar" onPress={handleLogin} loading={loading} style={styles.primaryButton} />
+              <CustomButton
+                title="Entrar"
+                onPress={handleLogin}
+                loading={loading}
+                style={styles.primaryButton}
+                containerStyle={styles.primaryButtonContainer}
+              />
             )}
           </View>
 
@@ -265,6 +271,10 @@ const createStyles = (theme) =>
     },
     primaryButton: {
       width: "100%",
+    },
+    primaryButtonContainer: {
+      width: "100%",
+      alignSelf: "stretch",
     },
     steps: {
       flexDirection: "row",

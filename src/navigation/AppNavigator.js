@@ -14,6 +14,9 @@ import { auth } from "../services/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { createOrUpdateUserProfile, getUserProfile } from "../services/userService";
 import { getDisplayName } from "../utils/userName";
+import { defaultSummaryStats, mapProgressSnapshot } from "../utils/progressStats";
+import { collection, onSnapshot } from "firebase/firestore";
+import { db } from "../services/firebase";
 import SplashScreen from "../screens/Splash/SplashScreen";
 import LoginScreen from "../screens/Auth/LoginScreen";
 import RegisterScreen from "../screens/Auth/RegisterScreen";
@@ -160,6 +163,8 @@ const AppNavigator = () => {
   const pendingResetCode = useRef(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
+  const [lessonsCompleted, setLessonsCompleted] = useState({});
+  const [progressStats, setProgressStats] = useState(defaultSummaryStats);
   const systemScheme = useColorScheme();
   const isDark = darkMode === null ? systemScheme === "dark" : darkMode;
   const palette = isDark ? darkColors : lightColors;
@@ -233,11 +238,34 @@ const AppNavigator = () => {
         setUserName("Linova");
         setFullName("");
         setLevel(null);
+        setLessonsCompleted({});
+        setProgressStats(defaultSummaryStats);
       }
       setAuthReady(true);
     });
     return unsubscribe;
   }, []);
+
+  useEffect(() => {
+    if (!currentUser?.uid) return undefined;
+    const progressRef = collection(db, "users", currentUser.uid, "lessonsCompleted");
+    const unsubscribe = onSnapshot(
+      progressRef,
+      (snapshot) => {
+        const map = {};
+        snapshot.forEach((docSnap) => {
+          map[docSnap.id] = docSnap.data();
+        });
+        setLessonsCompleted(map);
+        setProgressStats(mapProgressSnapshot(snapshot));
+      },
+      () => {
+        setLessonsCompleted({});
+        setProgressStats(defaultSummaryStats);
+      }
+    );
+    return unsubscribe;
+  }, [currentUser?.uid]);
 
   const contextValue = useMemo(
     () => ({
@@ -255,8 +283,10 @@ const AppNavigator = () => {
       currentUser,
       setCurrentUser,
       authReady,
+      lessonsCompleted,
+      progressStats,
     }),
-    [level, userName, fullName, userEmail, darkMode, isDark, currentUser, authReady]
+    [level, userName, fullName, userEmail, darkMode, isDark, currentUser, authReady, lessonsCompleted, progressStats]
   );
 
   const navigationTheme = useMemo(() => {

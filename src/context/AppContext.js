@@ -15,4 +15,6 @@ export const AppContext = createContext({
   currentUser: null,
   setCurrentUser: () => {},
   authReady: false,
+  lessonsCompleted: {},
+  progressStats: { days: 0, lessons: 0, activities: 0 },
 });

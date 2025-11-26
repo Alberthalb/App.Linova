@@ -9,12 +9,10 @@ import { getDisplayName } from "../../utils/userName";
 import { useThemeColors } from "../../hooks/useThemeColors";
 import { logoutUser, deleteAccount, updateUserAccount } from "../../services/authService";
 import { getFirebaseAuthErrorMessage } from "../../utils/firebaseErrorMessage";
-import { collection, onSnapshot } from "firebase/firestore";
-import { db } from "../../services/firebase";
-import { defaultSummaryStats, mapProgressSnapshot } from "../../utils/progressStats";
+import { defaultSummaryStats } from "../../utils/progressStats";
 
 const AccountScreen = ({ navigation }) => {
-  const { userName, setUserName, fullName, setFullName, userEmail, setUserEmail, currentUser } = useContext(AppContext);
+  const { userName, setUserName, fullName, setFullName, userEmail, setUserEmail, progressStats } = useContext(AppContext);
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const [name, setName] = useState(fullName || userName || "");
@@ -25,7 +23,7 @@ const AccountScreen = ({ navigation }) => {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [summaryStats, setSummaryStats] = useState(defaultSummaryStats);
+  const summaryStats = progressStats || defaultSummaryStats;
 
   const handleSaveProfile = async () => {
     const trimmedName = name.trim();
@@ -76,20 +74,6 @@ const AccountScreen = ({ navigation }) => {
       Alert.alert("Erro ao sair", getFirebaseAuthErrorMessage(error));
     }
   };
-
-  useEffect(() => {
-    if (!currentUser?.uid) {
-      setSummaryStats(defaultSummaryStats);
-      return;
-    }
-    const progressRef = collection(db, "users", currentUser.uid, "lessonsCompleted");
-    const unsubscribe = onSnapshot(
-      progressRef,
-      (snapshot) => setSummaryStats(mapProgressSnapshot(snapshot)),
-      () => setSummaryStats(defaultSummaryStats)
-    );
-    return unsubscribe;
-  }, [currentUser?.uid]);
 
   const handleSummaryPress = (type) => {
     const messages = {

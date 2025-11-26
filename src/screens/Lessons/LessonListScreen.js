@@ -11,14 +11,13 @@ import { db } from "../../services/firebase";
 import { canAccessLevel } from "../../utils/levels";
 
 const LessonListScreen = ({ navigation }) => {
-  const { userName, level: currentLevel, currentUser } = useContext(AppContext);
+  const { userName, level: currentLevel, lessonsCompleted: completedLessons = {} } = useContext(AppContext);
   const friendlyName = getDisplayName(userName);
   const [filter, setFilter] = useState("Todas");
   const [searchTerm, setSearchTerm] = useState("");
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [availableLevels, setAvailableLevels] = useState(["Todas"]);
-  const [completedLessons, setCompletedLessons] = useState({});
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
@@ -51,26 +50,6 @@ const LessonListScreen = ({ navigation }) => {
       setFilter(currentLevel);
     }
   }, [currentLevel]);
-
-  useEffect(() => {
-    if (!currentUser?.uid) {
-      setCompletedLessons({});
-      return;
-    }
-    const progressRef = collection(db, "users", currentUser.uid, "lessonsCompleted");
-    const unsubscribe = onSnapshot(
-      progressRef,
-      (snapshot) => {
-        const map = {};
-        snapshot.forEach((docSnap) => {
-          map[docSnap.id] = docSnap.data();
-        });
-        setCompletedLessons(map);
-      },
-      () => setCompletedLessons({})
-    );
-    return unsubscribe;
-  }, [currentUser?.uid]);
 
   const filteredLessons = useMemo(() => {
     return lessons.filter((item) => {
@@ -228,13 +207,14 @@ const createStyles = (colors) =>
       borderRadius: 14,
       borderWidth: 1,
       borderColor: colors.border,
+      position: "relative",
     },
     cardCompleted: {
       borderColor: colors.primary,
     },
     cardHeader: {
       flexDirection: "row",
-      alignItems: "center",
+      alignItems: "flex-start",
       justifyContent: "space-between",
       gap: spacing.sm,
     },
@@ -243,6 +223,8 @@ const createStyles = (colors) =>
       fontWeight: "700",
       color: colors.text,
       fontFamily: typography.fonts.body,
+      flex: 1,
+      flexWrap: "wrap",
     },
     level: {
       marginTop: spacing.xs,
@@ -258,6 +240,8 @@ const createStyles = (colors) =>
       paddingHorizontal: spacing.sm,
       paddingVertical: spacing.xs,
       borderRadius: radius.sm,
+      flexShrink: 0,
+      alignSelf: "flex-start",
     },
     completedText: {
       color: colors.text,

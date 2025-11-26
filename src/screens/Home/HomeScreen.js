@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useMemo, useState } from "react";
+import React, { useContext, useMemo, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -7,9 +7,7 @@ import { AppContext } from "../../context/AppContext";
 import { spacing, typography, radius } from "../../styles/theme";
 import { getDisplayName } from "../../utils/userName";
 import { useThemeColors, useIsDarkMode } from "../../hooks/useThemeColors";
-import { collection, onSnapshot } from "firebase/firestore";
-import { db } from "../../services/firebase";
-import { defaultSummaryStats, mapProgressSnapshot } from "../../utils/progressStats";
+import { defaultSummaryStats } from "../../utils/progressStats";
 
 const levelDescriptions = {
   Discoverer: "Discoverer • Você está dando os primeiros passos e explora o idioma com conteúdo guiado.",
@@ -20,30 +18,16 @@ const levelDescriptions = {
 };
 
 const HomeScreen = ({ navigation }) => {
-  const { level, userName, setDarkMode, authReady, currentUser } = useContext(AppContext);
+  const { level, userName, setDarkMode, authReady, progressStats } = useContext(AppContext);
   const displayName = authReady && userName ? getDisplayName(userName, null, "Linova") : "";
   const [isIaModalVisible, setIaModalVisible] = useState(false);
   const [statInfo, setStatInfo] = useState(null);
   const [levelInfo, setLevelInfo] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [stats, setStats] = useState(defaultSummaryStats);
+  const stats = progressStats || defaultSummaryStats;
   const theme = useThemeColors();
   const isDarkMode = useIsDarkMode();
   const styles = useMemo(() => createStyles(theme), [theme]);
-
-  useEffect(() => {
-    if (!currentUser?.uid) {
-      setStats(defaultSummaryStats);
-      return;
-    }
-    const progressRef = collection(db, "users", currentUser.uid, "lessonsCompleted");
-    const unsubscribe = onSnapshot(
-      progressRef,
-      (snapshot) => setStats(mapProgressSnapshot(snapshot)),
-      () => setStats(defaultSummaryStats)
-    );
-    return unsubscribe;
-  }, [currentUser?.uid]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -103,7 +87,7 @@ const HomeScreen = ({ navigation }) => {
 
         <View style={[styles.hero, { backgroundColor: theme.primary }]}>
           <View style={styles.heroRow}>
-            <View>
+            <View style={styles.heroCopy}>
               <Text style={styles.heroLabel}>Bem-vindo</Text>
               {displayName ? (
                 <Text style={styles.welcome}>Olá, {displayName}!</Text>
@@ -112,13 +96,13 @@ const HomeScreen = ({ navigation }) => {
                   Olá, <Text style={styles.loadingDots}>...</Text>
                 </Text>
               )}
+              <Text style={styles.subtitle}>{subtitleText}</Text>
             </View>
-            <TouchableOpacity style={styles.levelPill} onPress={handleLevelInfo} activeOpacity={0.8}>
-              <Feather name="star" size={16} color={theme.primary} />
-              <Text style={styles.levelText}>{level || "Discoverer"}</Text>
-            </TouchableOpacity>
           </View>
-          <Text style={styles.subtitle}>{subtitleText}</Text>
+          <TouchableOpacity style={styles.levelPillFloating} onPress={handleLevelInfo} activeOpacity={0.8}>
+            <Feather name="star" size={16} color={theme.primary} />
+            <Text style={styles.levelText}>{level || "Discoverer"}</Text>
+          </TouchableOpacity>
           <View style={styles.heroActions}>
             <TouchableOpacity style={styles.heroChip} activeOpacity={0.9} onPress={() => navigation.navigate("LessonList")}>
               <Feather name="book-open" size={16} color="#FFFFFF" />
@@ -174,6 +158,7 @@ const createStyles = (colors) =>
       flexDirection: "row",
       alignItems: "center",
       gap: spacing.sm,
+      flexWrap: "wrap",
     },
     statPill: {
       flexDirection: "row",
@@ -207,6 +192,8 @@ const createStyles = (colors) =>
       fontWeight: "700",
       color: "#FFFFFF",
       fontFamily: typography.fonts.heading,
+      flexShrink: 1,
+      flexWrap: "wrap",
     },
     subtitle: {
       fontSize: typography.body,
@@ -216,17 +203,24 @@ const createStyles = (colors) =>
     },
     hero: {
       padding: spacing.lg,
+      paddingRight: spacing.xl * 1.5,
       borderRadius: radius.lg,
       shadowColor: colors.primary,
       shadowOpacity: 0.12,
       shadowRadius: 12,
       elevation: 3,
       gap: spacing.sm,
+      position: "relative",
+      overflow: "hidden",
     },
     heroRow: {
       flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
+      alignItems: "flex-start",
+      justifyContent: "flex-start",
+      gap: spacing.md,
+    },
+    heroCopy: {
+      gap: spacing.xs,
     },
     heroLabel: {
       fontSize: typography.subheading,
@@ -241,16 +235,33 @@ const createStyles = (colors) =>
       paddingHorizontal: spacing.sm,
       paddingVertical: spacing.xs,
       borderRadius: radius.sm,
+      maxWidth: "50%",
+    },
+    levelPillFloating: {
+      position: "absolute",
+      top: spacing.sm,
+      right: spacing.sm,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      backgroundColor: colors.background,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      borderRadius: radius.sm,
+      maxWidth: "60%",
     },
     levelText: {
       color: colors.primary,
       fontWeight: "700",
       fontFamily: typography.fonts.body,
+      flexShrink: 1,
+      flexWrap: "wrap",
     },
     heroActions: {
       flexDirection: "row",
       gap: spacing.sm,
-      marginTop: spacing.sm,
+      marginTop: spacing.md,
+      flexWrap: "wrap",
     },
     heroChip: {
       flexDirection: "row",
