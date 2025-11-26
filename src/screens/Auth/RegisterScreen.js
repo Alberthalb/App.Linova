@@ -2,6 +2,7 @@ import React, { useContext, useMemo, useState } from "react";
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Image, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
+import { SvgUri } from "react-native-svg";
 import CustomButton from "../../components/CustomButton";
 import { spacing, typography, radius } from "../../styles/theme";
 import { AppContext } from "../../context/AppContext";
@@ -17,12 +18,16 @@ const RegisterScreen = ({ navigation }) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
     const trimmedName = name.trim();
     const trimmedEmail = email.trim();
-    if (!trimmedName || !trimmedEmail || !password.trim()) {
+    const trimmedPassword = password.trim();
+    const trimmedConfirm = confirmPassword.trim();
+    if (!trimmedName || !trimmedEmail || !trimmedPassword || !trimmedConfirm) {
       Alert.alert("Campos obrigatórios", "Preencha todas as informações para criar sua conta.");
       return;
     }
@@ -30,9 +35,13 @@ const RegisterScreen = ({ navigation }) => {
       Alert.alert("Nome inválido", "Use apenas letras e espaços no campo de nome.");
       return;
     }
+    if (trimmedPassword !== trimmedConfirm) {
+      Alert.alert("Senhas diferentes", "As senhas não conferem. Verifique e tente novamente.");
+      return;
+    }
     setLoading(true);
     try {
-      await registerUser(trimmedName, trimmedEmail, password);
+      await registerUser(trimmedName, trimmedEmail, trimmedPassword);
       const derivedName = getDisplayName(trimmedName, trimmedEmail);
       setUserName(derivedName);
       setFullName(trimmedName);
@@ -90,7 +99,35 @@ const RegisterScreen = ({ navigation }) => {
             <View style={styles.fieldHeader}>
               <Text style={styles.fieldLabel}>Senha</Text>
             </View>
-            <TextInput style={styles.input} placeholder="Senha" value={password} onChangeText={setPassword} secureTextEntry />
+            <View style={styles.passwordRow}>
+              <TextInput
+                style={[styles.input, styles.flex]}
+                placeholder="Senha"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+              />
+              <TouchableOpacity onPress={() => setShowPassword((prev) => !prev)} activeOpacity={0.7}>
+                <SvgUri
+                  width={24}
+                  height={24}
+                  uri={showPassword ? Image.resolveAssetSource(require("../../../assets/open-eye.svg")).uri : Image.resolveAssetSource(require("../../../assets/close-eye.svg")).uri}
+                  fill={theme.text}
+                />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.fieldHeader}>
+              <Text style={styles.fieldLabel}>Confirmar senha</Text>
+            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="Repita sua senha"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry
+              autoCapitalize="none"
+            />
             <CustomButton title="Cadastrar" onPress={handleRegister} loading={loading} disabled={loading} />
           </View>
           <TouchableOpacity onPress={() => navigation.navigate("Login")} style={styles.footerLinkWrapper}>
@@ -168,6 +205,14 @@ const createStyles = (theme) =>
       fontSize: typography.body,
       color: theme.text,
       fontFamily: typography.fonts.body,
+    },
+    passwordRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      backgroundColor: theme.gray,
+      borderRadius: 12,
+      paddingHorizontal: spacing.md,
     },
     footerLinkWrapper: {
       flexDirection: "row",

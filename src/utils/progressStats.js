@@ -5,12 +5,9 @@ export const mapProgressSnapshot = (snapshot) => {
     return defaultSummaryStats;
   }
   const uniqueDays = new Set();
-  let activitiesCount = 0;
   snapshot.docs.forEach((docSnap) => {
     const data = docSnap.data();
     const timestamp = data?.updatedAt;
-    const totalQuestions = Number(data?.totalQuestions) || 0;
-    activitiesCount += totalQuestions || 0;
     if (timestamp?.toDate) {
       const dayKey = timestamp.toDate().toISOString().slice(0, 10);
       uniqueDays.add(dayKey);
@@ -19,6 +16,6 @@ export const mapProgressSnapshot = (snapshot) => {
   return {
     days: uniqueDays.size || 1,
     lessons: snapshot.size,
-    activities: activitiesCount || snapshot.size,
+    activities: snapshot.size,
   };
 };

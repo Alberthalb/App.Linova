@@ -65,66 +65,75 @@ const LoginScreen = ({ navigation }) => {
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
         <View style={styles.container}>
-          <TouchableOpacity style={styles.backLink} onPress={() => navigation.goBack()} activeOpacity={0.7}>
-            <Text style={styles.backText}>Voltar</Text>
-          </TouchableOpacity>
-          {showSkip && (
-            <TouchableOpacity style={styles.skipLink} onPress={() => navigation.replace("MainTabs")} activeOpacity={0.7}>
-              <Text style={styles.skipText}>Ir para o app</Text>
+          <View style={styles.topRow}>
+            <TouchableOpacity style={styles.backLink} onPress={() => navigation.goBack()} activeOpacity={0.7}>
+              <Text style={styles.backText}>Voltar</Text>
             </TouchableOpacity>
-          )}
-          <View style={styles.logoWrapper}>
-            <Image source={require("../../../assets/brand-logo.png")} style={styles.logo} />
-          </View>
-          <View style={styles.headerText}>
-            <Text style={styles.title}>{isEmailStep ? "Qual é o seu email?" : "Agora digite sua senha"}</Text>
-              <Text style={styles.subtitle}>{isEmailStep ? "Usaremos esse email para localizar seu progresso." : email}</Text>
-          </View>
-          {isEmailStep ? (
-            <View style={styles.inputRow}>
-              <TextInput
-                style={[styles.input, styles.flex]}
-                placeholder="Email"
-                placeholderTextColor={theme.muted}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                returnKeyType="done"
-                onSubmitEditing={handleEmailStep}
-              />
-              <TouchableOpacity style={styles.advanceButton} onPress={handleEmailStep} activeOpacity={0.8}>
-                <SvgUri width={22} height={22} uri={nextArrowUri} fill={arrowColor} />
+            {showSkip && (
+              <TouchableOpacity style={styles.skipLink} onPress={() => navigation.replace("MainTabs")} activeOpacity={0.7}>
+                <Text style={styles.skipText}>Ir para o app</Text>
               </TouchableOpacity>
+            )}
+          </View>
+
+          <View style={styles.content}>
+            <View style={styles.logoWrapper}>
+              <Image source={require("../../../assets/brand-logo.png")} style={styles.logo} />
             </View>
-          ) : (
-            <View style={styles.passwordPanel}>
+            <View style={styles.headerText}>
+              <Text style={styles.welcome}>Bem-vindo de volta!</Text>
+              <Text style={styles.title}>Entrar na sua conta</Text>
+              <Text style={styles.subtitle}>
+                {isEmailStep ? "Informe seu email para continuar de onde parou." : `Email informado: ${email}`}
+              </Text>
+            </View>
+            {isEmailStep ? (
               <View style={styles.inputRow}>
                 <TextInput
                   style={[styles.input, styles.flex]}
-                  placeholder="Senha"
+                  placeholder="Email"
                   placeholderTextColor={theme.muted}
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                  autoFocus
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  returnKeyType="done"
+                  onSubmitEditing={handleEmailStep}
                 />
-                <TouchableOpacity onPress={() => setShowPassword((prev) => !prev)} activeOpacity={0.7}>
-                  <SvgUri width={24} height={24} uri={showPassword ? eyeOpenUri : eyeClosedUri} fill={svgTint} />
+                <TouchableOpacity style={styles.advanceButton} onPress={handleEmailStep} activeOpacity={0.8}>
+                  <SvgUri width={22} height={22} uri={nextArrowUri} fill={arrowColor} />
                 </TouchableOpacity>
               </View>
-              <TouchableOpacity onPress={() => navigation.navigate("ForgotPassword")} activeOpacity={0.7}>
-                <Text style={styles.link}>Esqueci minha senha</Text>
-              </TouchableOpacity>
+            ) : (
+              <View style={styles.passwordPanel}>
+                <View style={styles.inputRow}>
+                  <TextInput
+                    style={[styles.input, styles.flex]}
+                    placeholder="Senha"
+                    placeholderTextColor={theme.muted}
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPassword}
+                    autoFocus
+                  />
+                  <TouchableOpacity onPress={() => setShowPassword((prev) => !prev)} activeOpacity={0.7}>
+                    <SvgUri width={24} height={24} uri={showPassword ? eyeOpenUri : eyeClosedUri} fill={svgTint} />
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity onPress={() => navigation.navigate("ForgotPassword")} activeOpacity={0.7}>
+                  <Text style={styles.link}>Esqueci minha senha</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            <View style={styles.steps}>
+              <View style={[styles.dot, isEmailStep && styles.dotActive]} />
+              <View style={[styles.dot, !isEmailStep && styles.dotActive]} />
             </View>
-          )}
-          <View style={styles.steps}>
-            <View style={[styles.dot, isEmailStep && styles.dotActive]} />
-            <View style={[styles.dot, !isEmailStep && styles.dotActive]} />
+            {!isEmailStep && (
+              <CustomButton title="Entrar" onPress={handleLogin} loading={loading} style={styles.primaryButton} />
+            )}
           </View>
-          {!isEmailStep && (
-            <CustomButton title="Entrar" onPress={handleLogin} loading={loading} style={styles.primaryButton} />
-          )}
+
           <TouchableOpacity onPress={() => navigation.navigate("Register")} style={styles.secondaryLink}>
             <Text style={styles.secondaryText}>Criar nova conta</Text>
           </TouchableOpacity>
@@ -139,6 +148,13 @@ const createStyles = (theme) =>
     flex: {
       flex: 1,
     },
+    welcome: {
+      fontSize: typography.body,
+      color: theme.primary,
+      fontFamily: typography.fonts.body,
+      fontWeight: "700",
+      textAlign: "center",
+    },
     safe: {
       flex: 1,
       backgroundColor: theme.background,
@@ -146,9 +162,16 @@ const createStyles = (theme) =>
     container: {
       flex: 1,
       paddingHorizontal: spacing.layout,
-      paddingVertical: spacing.xl,
+      paddingVertical: spacing.lg,
       justifyContent: "space-between",
-      gap: spacing.lg,
+      alignItems: "stretch",
+      gap: spacing.md,
+    },
+    topRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      width: "100%",
     },
     backLink: {
       alignSelf: "flex-start",
@@ -161,6 +184,13 @@ const createStyles = (theme) =>
     skipLink: {
       alignSelf: "flex-end",
       marginBottom: spacing.sm,
+    },
+    content: {
+      flex: 1,
+      width: "100%",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.md,
     },
     skipText: {
       color: theme.muted,
@@ -177,7 +207,7 @@ const createStyles = (theme) =>
     },
     headerText: {
       alignItems: "center",
-      gap: spacing.sm,
+      gap: spacing.xs,
     },
     title: {
       fontSize: typography.heading + 2,
@@ -190,6 +220,8 @@ const createStyles = (theme) =>
       color: theme.textSecondary,
       textAlign: "center",
       fontFamily: typography.fonts.body,
+      lineHeight: 20,
+      maxWidth: 250,
     },
     input: {
       borderRadius: radius.md,
@@ -208,6 +240,7 @@ const createStyles = (theme) =>
       paddingHorizontal: spacing.md,
       borderRadius: radius.xl,
       height: 52,
+      alignSelf: "stretch",
     },
     inputIcon: {
       marginRight: spacing.xs,
@@ -238,6 +271,7 @@ const createStyles = (theme) =>
       gap: spacing.xs,
       justifyContent: "center",
       alignItems: "center",
+      alignSelf: "center",
     },
     dot: {
       width: 10,
@@ -250,6 +284,7 @@ const createStyles = (theme) =>
     },
     secondaryLink: {
       alignSelf: "center",
+      marginTop: spacing.lg,
     },
     secondaryText: {
       color: theme.primary,

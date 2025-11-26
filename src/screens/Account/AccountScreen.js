@@ -95,7 +95,7 @@ const AccountScreen = ({ navigation }) => {
     const messages = {
       days: `Dias em que você estudou: ${summaryStats.days}.`,
       lessons: `Aulas concluídas: ${summaryStats.lessons}.`,
-      activities: `Questões respondidas nos quizzes: ${summaryStats.activities}.`,
+      activities: `Atividades respondidas: ${summaryStats.activities}.`,
     };
     setStatInfo(messages[type]);
   };

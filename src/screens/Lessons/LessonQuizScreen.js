@@ -275,7 +275,12 @@ const LessonQuizScreen = ({ navigation, route }) => {
       const message = promotedLevel
         ? `Você acertou ${correctAnswers}/${total} (${score}%) e avançou para o nível ${promotedLevel}!`
         : `Você acertou ${correctAnswers}/${total} (${score}%).`;
-      Alert.alert(title, message, [{ text: "Ok", onPress: () => navigation.navigate("LessonList") }]);
+      const goToLessonsRoot = () =>
+        navigation.reset({
+          index: 1,
+          routes: [{ name: "Home" }, { name: "LessonList" }],
+        });
+      Alert.alert(title, message, [{ text: "Ok", onPress: goToLessonsRoot }]);
     } catch (error) {
       Alert.alert("Erro ao salvar", "Não foi possível salvar seu progresso local.");
     }

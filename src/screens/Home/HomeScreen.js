@@ -57,7 +57,7 @@ const HomeScreen = ({ navigation }) => {
     const messages = {
       days: `Dias em que você estudou: ${stats.days}.`,
       lessons: `Aulas concluídas: ${stats.lessons}.`,
-      activities: `Questões respondidas nos quizzes: ${stats.activities}.`,
+      activities: `Atividades respondidas: ${stats.activities}.`,
     };
     setStatInfo(messages[type]);
   };

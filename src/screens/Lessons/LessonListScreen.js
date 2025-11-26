@@ -11,13 +11,14 @@ import { db } from "../../services/firebase";
 import { canAccessLevel } from "../../utils/levels";
 
 const LessonListScreen = ({ navigation }) => {
-  const { userName, level: currentLevel } = useContext(AppContext);
+  const { userName, level: currentLevel, currentUser } = useContext(AppContext);
   const friendlyName = getDisplayName(userName);
   const [filter, setFilter] = useState("Todas");
   const [searchTerm, setSearchTerm] = useState("");
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [availableLevels, setAvailableLevels] = useState(["Todas"]);
+  const [completedLessons, setCompletedLessons] = useState({});
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
@@ -51,6 +52,26 @@ const LessonListScreen = ({ navigation }) => {
     }
   }, [currentLevel]);
 
+  useEffect(() => {
+    if (!currentUser?.uid) {
+      setCompletedLessons({});
+      return;
+    }
+    const progressRef = collection(db, "users", currentUser.uid, "lessonsCompleted");
+    const unsubscribe = onSnapshot(
+      progressRef,
+      (snapshot) => {
+        const map = {};
+        snapshot.forEach((docSnap) => {
+          map[docSnap.id] = docSnap.data();
+        });
+        setCompletedLessons(map);
+      },
+      () => setCompletedLessons({})
+    );
+    return unsubscribe;
+  }, [currentUser?.uid]);
+
   const filteredLessons = useMemo(() => {
     return lessons.filter((item) => {
       const matchesLevel = filter === "Todas" || item.level?.toLowerCase() === filter.toLowerCase();
@@ -70,12 +91,27 @@ const LessonListScreen = ({ navigation }) => {
     navigation.navigate("Lesson", { lessonId: item.id });
   };
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity style={styles.card} onPress={() => handleLessonPress(item)} activeOpacity={0.85}>
-      <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.level}>Nível: {item.level}</Text>
-    </TouchableOpacity>
-  );
+  const renderItem = ({ item }) => {
+    const completed = !!completedLessons[item.id];
+    return (
+      <TouchableOpacity
+        style={[styles.card, completed && styles.cardCompleted]}
+        onPress={() => handleLessonPress(item)}
+        activeOpacity={0.85}
+      >
+        <View style={styles.cardHeader}>
+          <Text style={styles.title}>{item.title}</Text>
+          {completed && (
+            <View style={styles.completedBadge}>
+              <Feather name="check-circle" size={14} color={theme.primary} />
+              <Text style={styles.completedText}>Assistida</Text>
+            </View>
+          )}
+        </View>
+        <Text style={styles.level}>Nivel: {item.level}</Text>
+      </TouchableOpacity>
+    );
+  };
 
   const renderHeader = () => (
     <View>
@@ -193,6 +229,15 @@ const createStyles = (colors) =>
       borderWidth: 1,
       borderColor: colors.border,
     },
+    cardCompleted: {
+      borderColor: colors.primary,
+    },
+    cardHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: spacing.sm,
+    },
     title: {
       fontSize: typography.subheading + 1,
       fontWeight: "700",
@@ -204,6 +249,20 @@ const createStyles = (colors) =>
       fontSize: typography.body,
       color: colors.muted,
       fontFamily: typography.fonts.body,
+    },
+    completedBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+      backgroundColor: colors.gray,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      borderRadius: radius.sm,
+    },
+    completedText: {
+      color: colors.text,
+      fontFamily: typography.fonts.body,
+      fontWeight: "700",
     },
     filterRow: {
       flexDirection: "row",
