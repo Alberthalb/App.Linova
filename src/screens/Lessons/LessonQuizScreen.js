@@ -227,7 +227,7 @@ const LessonQuizScreen = ({ navigation, route }) => {
     setAccessDenied(true);
     Alert.alert(
       "Quiz bloqueado",
-      `Este quiz pertence ao nivel ${lessonLevel}. Complete seu nivel atual (${level}) para desbloquear.`,
+      `Este quiz pertence ao nível ${lessonLevel}. Complete seu nível atual (${level}) para desbloquear.`,
       [{ text: "Ok", onPress: () => navigation.goBack() }]
     );
   }, [accessDenied, lessonLevel, level, navigation]);
@@ -238,7 +238,7 @@ const LessonQuizScreen = ({ navigation, route }) => {
       return;
     }
     if (answers[currentQuestion.id] === undefined) {
-      Alert.alert("Responda a pergunta", "Selecione uma alternativa antes de avancar.");
+      Alert.alert("Responda à pergunta", "Selecione uma alternativa antes de avançar.");
       return;
     }
     if (step < total - 1) {
@@ -273,13 +273,11 @@ const LessonQuizScreen = ({ navigation, route }) => {
       }
       const title = promotedLevel ? "Parabens!" : "Progresso salvo";
       const message = promotedLevel
-        ? `Voce acertou ${correctAnswers}/${total} (${score}%) e avancou para o nivel ${promotedLevel}!`
-        : `Voce acertou ${correctAnswers}/${total} (${score}%).`;
-      Alert.alert(title, message, [
-        { text: "Ok", onPress: () => navigation.navigate("LessonList") },
-      ]);
+        ? `Você acertou ${correctAnswers}/${total} (${score}%) e avançou para o nível ${promotedLevel}!`
+        : `Você acertou ${correctAnswers}/${total} (${score}%).`;
+      Alert.alert(title, message, [{ text: "Ok", onPress: () => navigation.navigate("LessonList") }]);
     } catch (error) {
-      Alert.alert("Erro ao salvar", "Nao foi possivel salvar seu progresso local.");
+      Alert.alert("Erro ao salvar", "Não foi possível salvar seu progresso local.");
     }
   };
 
@@ -324,7 +322,7 @@ const LessonQuizScreen = ({ navigation, route }) => {
                 );
               })}
             </View>
-            <CustomButton title={step === total - 1 ? "Finalizar" : "Proxima"} onPress={goNext} />
+            <CustomButton title={step === total - 1 ? "Finalizar" : "Próxima"} onPress={goNext} />
           </>
         )}
       </View>

@@ -16,14 +16,24 @@ const WelcomeScreen = ({ navigation }) => {
           <Image source={require("../../../assets/icon.png")} style={styles.logo} resizeMode="contain" />
         </View>
         <View style={styles.textContent}>
-          <Text style={styles.title}>Comece a falar com confiança</Text>
-          <Text style={styles.subtitle}>Descubra como a Linova pode acelerar seu inglês com rotinas simples.</Text>
+          <Text style={styles.title}>Aprenda inglês com segurança e ritmo</Text>
+          <Text style={styles.subtitle}>Rotinas curtas, aulas guiadas e progresso acompanhado de perto.</Text>
         </View>
         <View style={styles.actions}>
           <CustomButton title="Começar agora" onPress={() => navigation.navigate("Register")} />
           <CustomButton title="Já tenho conta" variant="ghost" onPress={() => navigation.navigate("Login")} />
         </View>
-        <Text style={styles.footer}>Ao continuar, você concorda com nossos Termos e Política de Privacidade.</Text>
+        <Text style={styles.footer}>
+          Ao continuar, você concorda com nossos{" "}
+          <Text style={styles.link} onPress={() => navigation.navigate("Terms")}>
+            Termos
+          </Text>{" "}
+          e{" "}
+          <Text style={styles.link} onPress={() => navigation.navigate("Privacy")}>
+            Política de Privacidade
+          </Text>
+          .
+        </Text>
       </View>
     </SafeAreaView>
   );
@@ -84,6 +94,10 @@ const createStyles = (colors) =>
       color: colors.muted,
       textAlign: "center",
       fontFamily: typography.fonts.body,
+    },
+    link: {
+      color: colors.muted,
+      textDecorationLine: "underline",
     },
   });
 

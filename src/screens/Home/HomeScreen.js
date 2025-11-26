@@ -1,4 +1,4 @@
-import React, { useContext, useMemo, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -7,6 +7,9 @@ import { AppContext } from "../../context/AppContext";
 import { spacing, typography, radius } from "../../styles/theme";
 import { getDisplayName } from "../../utils/userName";
 import { useThemeColors, useIsDarkMode } from "../../hooks/useThemeColors";
+import { collection, onSnapshot } from "firebase/firestore";
+import { db } from "../../services/firebase";
+import { defaultSummaryStats, mapProgressSnapshot } from "../../utils/progressStats";
 
 const levelDescriptions = {
   Discoverer: "Discoverer • Você está dando os primeiros passos e explora o idioma com conteúdo guiado.",
@@ -17,20 +20,30 @@ const levelDescriptions = {
 };
 
 const HomeScreen = ({ navigation }) => {
-  const { level, userName, setDarkMode, authReady } = useContext(AppContext);
+  const { level, userName, setDarkMode, authReady, currentUser } = useContext(AppContext);
   const displayName = authReady && userName ? getDisplayName(userName, null, "Linova") : "";
   const [isIaModalVisible, setIaModalVisible] = useState(false);
   const [statInfo, setStatInfo] = useState(null);
   const [levelInfo, setLevelInfo] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [stats, setStats] = useState(defaultSummaryStats);
   const theme = useThemeColors();
   const isDarkMode = useIsDarkMode();
   const styles = useMemo(() => createStyles(theme), [theme]);
-  const mockStats = {
-    days: 21,
-    lessons: 5,
-    activities: 14,
-  };
+
+  useEffect(() => {
+    if (!currentUser?.uid) {
+      setStats(defaultSummaryStats);
+      return;
+    }
+    const progressRef = collection(db, "users", currentUser.uid, "lessonsCompleted");
+    const unsubscribe = onSnapshot(
+      progressRef,
+      (snapshot) => setStats(mapProgressSnapshot(snapshot)),
+      () => setStats(defaultSummaryStats)
+    );
+    return unsubscribe;
+  }, [currentUser?.uid]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -42,9 +55,9 @@ const HomeScreen = ({ navigation }) => {
   const closeIaModal = () => setIaModalVisible(false);
   const handleStatPress = (type) => {
     const messages = {
-      days: "Dias consecutivos aprendendo com a Linova.",
-      lessons: "Total de aulas assistidas nesta semana.",
-      activities: "Atividades práticas concluídas no app.",
+      days: `Dias em que você estudou: ${stats.days}.`,
+      lessons: `Aulas concluídas: ${stats.lessons}.`,
+      activities: `Questões respondidas nos quizzes: ${stats.activities}.`,
     };
     setStatInfo(messages[type]);
   };
@@ -62,6 +75,11 @@ const HomeScreen = ({ navigation }) => {
     });
   };
 
+  const subtitleText =
+    stats.lessons > 0
+      ? "Continue de onde parou e desbloqueie novas aulas."
+      : "Comece sua primeira aula para desbloquear novos níveis.";
+
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right", "bottom"]}>
       <ScrollView
@@ -70,17 +88,13 @@ const HomeScreen = ({ navigation }) => {
       >
         <View style={styles.container}>
         <View style={styles.topBar}>
-          <TouchableOpacity style={styles.statPill} onPress={() => handleStatPress("days")} activeOpacity={0.8}>
-            <Feather name="calendar" size={14} color="#FF6B5C" />
-            <Text style={styles.statText}>{mockStats.days}</Text>
-          </TouchableOpacity>
           <TouchableOpacity style={styles.statPill} onPress={() => handleStatPress("lessons")} activeOpacity={0.8}>
             <Feather name="book" size={14} color="#3D7FFC" />
-            <Text style={styles.statText}>{mockStats.lessons}</Text>
+            <Text style={styles.statText}>{stats.lessons}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.statPill} onPress={() => handleStatPress("activities")} activeOpacity={0.8}>
             <Feather name="check-circle" size={14} color="#FFB347" />
-            <Text style={styles.statText}>{mockStats.activities}</Text>
+            <Text style={styles.statText}>{stats.activities}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.themeButton} onPress={handleThemeToggle} activeOpacity={0.8}>
             <Feather name={isDarkMode ? "sun" : "moon"} size={16} color={theme.text} />
@@ -92,10 +106,10 @@ const HomeScreen = ({ navigation }) => {
             <View>
               <Text style={styles.heroLabel}>Bem-vindo</Text>
               {displayName ? (
-                <Text style={styles.welcome}>Ola, {displayName}!</Text>
+                <Text style={styles.welcome}>Olá, {displayName}!</Text>
               ) : (
                 <Text style={styles.welcome}>
-                  Ola, <Text style={styles.loadingDots}>...</Text>
+                  Olá, <Text style={styles.loadingDots}>...</Text>
                 </Text>
               )}
             </View>
@@ -104,7 +118,7 @@ const HomeScreen = ({ navigation }) => {
               <Text style={styles.levelText}>{level || "Discoverer"}</Text>
             </TouchableOpacity>
           </View>
-          <Text style={styles.subtitle}>Continue de onde parou e desbloqueie novas aulas.</Text>
+          <Text style={styles.subtitle}>{subtitleText}</Text>
           <View style={styles.heroActions}>
             <TouchableOpacity style={styles.heroChip} activeOpacity={0.9} onPress={() => navigation.navigate("LessonList")}>
               <Feather name="book-open" size={16} color="#FFFFFF" />
@@ -119,7 +133,7 @@ const HomeScreen = ({ navigation }) => {
 
           <View style={styles.actions}>
             <CustomButton title="Ver aulas" onPress={() => navigation.navigate("LessonList")} />
-            <CustomButton title="Conversacao IA (Em breve)" variant="ghost" onPress={handleIaInDevelopment} />
+            <CustomButton title="Conversação IA (Em breve)" variant="ghost" onPress={handleIaInDevelopment} />
           </View>
         </View>
       </ScrollView>
@@ -127,7 +141,7 @@ const HomeScreen = ({ navigation }) => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>{statInfo ? "Seu progresso" : levelInfo ? level : "Funcao em desenvolvimento"}</Text>
-            <Text style={styles.modalText}>{statInfo || levelInfo || "A Conversacao IA esta em desenvolvimento e ficara disponivel em breve."}</Text>
+            <Text style={styles.modalText}>{statInfo || levelInfo || "A Conversação IA está em desenvolvimento e ficará disponível em breve."}</Text>
             <TouchableOpacity style={styles.modalButton} activeOpacity={0.8} onPress={() => (statInfo ? setStatInfo(null) : levelInfo ? setLevelInfo(null) : closeIaModal())}>
               <Text style={styles.modalButtonText}>OK</Text>
             </TouchableOpacity>

@@ -9,9 +9,12 @@ import { getDisplayName } from "../../utils/userName";
 import { useThemeColors } from "../../hooks/useThemeColors";
 import { logoutUser, deleteAccount, updateUserAccount } from "../../services/authService";
 import { getFirebaseAuthErrorMessage } from "../../utils/firebaseErrorMessage";
+import { collection, onSnapshot } from "firebase/firestore";
+import { db } from "../../services/firebase";
+import { defaultSummaryStats, mapProgressSnapshot } from "../../utils/progressStats";
 
 const AccountScreen = ({ navigation }) => {
-  const { userName, setUserName, fullName, setFullName, userEmail, setUserEmail } = useContext(AppContext);
+  const { userName, setUserName, fullName, setFullName, userEmail, setUserEmail, currentUser } = useContext(AppContext);
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const [name, setName] = useState(fullName || userName || "");
@@ -22,6 +25,7 @@ const AccountScreen = ({ navigation }) => {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [summaryStats, setSummaryStats] = useState(defaultSummaryStats);
 
   const handleSaveProfile = async () => {
     const trimmedName = name.trim();
@@ -73,11 +77,25 @@ const AccountScreen = ({ navigation }) => {
     }
   };
 
+  useEffect(() => {
+    if (!currentUser?.uid) {
+      setSummaryStats(defaultSummaryStats);
+      return;
+    }
+    const progressRef = collection(db, "users", currentUser.uid, "lessonsCompleted");
+    const unsubscribe = onSnapshot(
+      progressRef,
+      (snapshot) => setSummaryStats(mapProgressSnapshot(snapshot)),
+      () => setSummaryStats(defaultSummaryStats)
+    );
+    return unsubscribe;
+  }, [currentUser?.uid]);
+
   const handleSummaryPress = (type) => {
     const messages = {
-      days: "Dias consecutivos aprendendo com a Linova.",
-      lessons: "Total de aulas assistidas nesta semana.",
-      activities: "Atividades praticas concluidas no app.",
+      days: `Dias em que você estudou: ${summaryStats.days}.`,
+      lessons: `Aulas concluídas: ${summaryStats.lessons}.`,
+      activities: `Questões respondidas nos quizzes: ${summaryStats.activities}.`,
     };
     setStatInfo(messages[type]);
   };
@@ -144,17 +162,13 @@ const AccountScreen = ({ navigation }) => {
             <Feather name="activity" size={16} color={theme.primary} />
           </View>
           <View style={styles.summaryRow}>
-            <TouchableOpacity style={[styles.summaryTile, { borderColor: "#FF6B5C" }]} activeOpacity={0.85} onPress={() => handleSummaryPress("days")}>
-              <Feather name="calendar" size={16} color="#FF6B5C" />
-              <Text style={styles.summaryValue}>21 dias</Text>
-            </TouchableOpacity>
             <TouchableOpacity style={[styles.summaryTile, { borderColor: "#3D7FFC" }]} activeOpacity={0.85} onPress={() => handleSummaryPress("lessons")}>
               <Feather name="book" size={16} color="#3D7FFC" />
-              <Text style={styles.summaryValue}>5 aulas</Text>
+              <Text style={styles.summaryValue}>{summaryStats.lessons} aulas</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.summaryTile, { borderColor: "#FFB347" }]} activeOpacity={0.85} onPress={() => handleSummaryPress("activities")}>
               <Feather name="check-circle" size={16} color="#FFB347" />
-              <Text style={styles.summaryValue}>14 atividades</Text>
+              <Text style={styles.summaryValue}>{summaryStats.activities} atividades</Text>
             </TouchableOpacity>
           </View>
           <Text style={styles.summaryHint}>Esses números refletem seu uso recente e ajudam a acompanhar seu progresso.</Text>

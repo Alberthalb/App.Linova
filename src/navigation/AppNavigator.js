@@ -25,6 +25,8 @@ import HomeScreen from "../screens/Home/HomeScreen";
 import LessonListScreen from "../screens/Lessons/LessonListScreen";
 import LessonScreen from "../screens/Lessons/LessonScreen";
 import LessonQuizScreen from "../screens/Lessons/LessonQuizScreen";
+import TermsScreen from "../screens/Legal/TermsScreen";
+import PrivacyScreen from "../screens/Legal/PrivacyScreen";
 import AccountScreen from "../screens/Account/AccountScreen";
 import ChangePasswordScreen from "../screens/Account/ChangePasswordScreen";
 import SettingsScreen from "../screens/Settings/SettingsScreen";
@@ -300,6 +302,8 @@ const AppNavigator = () => {
           <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
           <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
           <Stack.Screen name="LevelQuiz" component={LevelQuizScreen} />
+          <Stack.Screen name="Terms" component={TermsScreen} />
+          <Stack.Screen name="Privacy" component={PrivacyScreen} />
           <Stack.Screen name="MainTabs" component={MainTabs} />
         </Stack.Navigator>
       </NavigationContainer>

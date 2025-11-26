@@ -11,7 +11,7 @@ import { createOrUpdateUserProfile, fetchInitialQuizQuestions, saveInitialQuizRe
 const FALLBACK_QUESTIONS = [
   {
     id: 1,
-    question: "Voce entende saudacoes e frases simples?",
+    question: "Você entende saudações e frases simples?",
     options: [
       { text: "Ainda estou comecando", value: 1 },
       { text: "Consigo entender bem", value: 2 },
@@ -20,7 +20,7 @@ const FALLBACK_QUESTIONS = [
   },
   {
     id: 2,
-    question: "Como voce lida com textos curtos em ingles?",
+    question: "Como você lida com textos curtos em inglês?",
     options: [
       { text: "Preciso traduzir tudo", value: 1 },
       { text: "Leio com alguma ajuda", value: 2 },
@@ -31,14 +31,14 @@ const FALLBACK_QUESTIONS = [
     id: 3,
     question: "Consegue conversar informalmente?",
     options: [
-      { text: "Ainda nao", value: 1 },
+      { text: "Ainda não", value: 1 },
       { text: "Com pausas, mas rola", value: 2 },
       { text: "Consigo me expressar bem", value: 3 },
     ],
   },
   {
     id: 4,
-    question: "Gramatica avancada e...",
+    question: "Gramática avançada é...",
     options: [
       { text: "Um misterio", value: 1 },
       { text: "Algo que estou estudando", value: 2 },
@@ -47,7 +47,7 @@ const FALLBACK_QUESTIONS = [
   },
   {
     id: 5,
-    question: "Quais sao seus objetivos?",
+    question: "Quais são seus objetivos?",
     options: [
       { text: "Aprender o basico", value: 1 },
       { text: "Ficar intermediario rapido", value: 2 },
@@ -92,7 +92,7 @@ const LevelQuizScreen = ({ navigation }) => {
 
   const goNext = async () => {
     if (!question || !answers[question.id]) {
-      Alert.alert("Responda para continuar", "Selecione uma opcao antes de avancar.");
+      Alert.alert("Responda para continuar", "Selecione uma opção antes de avançar.");
       return;
     }
     if (step < totalSteps - 1) {
@@ -145,7 +145,7 @@ const LevelQuizScreen = ({ navigation }) => {
       <View style={styles.container}>
         <View style={styles.hero}>
           <Text style={styles.title}>Quiz de Nivel</Text>
-          <Text style={styles.subtitle}>Vamos ajustar o conteudo para voce, {getDisplayName(userName)}.</Text>
+          <Text style={styles.subtitle}>Vamos ajustar o conteúdo para você, {getDisplayName(userName)}.</Text>
           <Text style={styles.progress}>
             Pergunta {step + 1} de {totalSteps}
           </Text>
@@ -176,7 +176,7 @@ const LevelQuizScreen = ({ navigation }) => {
                 );
               })}
             </View>
-            <CustomButton title={step === totalSteps - 1 ? "Finalizar" : "Proxima"} onPress={goNext} style={styles.button} />
+            <CustomButton title={step === totalSteps - 1 ? "Finalizar" : "Próxima"} onPress={goNext} style={styles.button} />
           </>
         )}
       </View>

@@ -48,7 +48,11 @@ const RegisterScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right", "bottom"]}>
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+      >
         <ScrollView
           contentContainerStyle={styles.container}
           overScrollMode="always"
@@ -65,7 +69,7 @@ const RegisterScreen = ({ navigation }) => {
               </View>
             </View>
             <Text style={styles.title}>Crie sua conta</Text>
-            <Text style={styles.subtitle}>Avance para desbloquear o quiz inicial.</Text>
+            <Text style={styles.subtitle}>Comece sua jornada e receba aulas personalizadas.</Text>
           </View>
           <View style={styles.card}>
             <View style={styles.fieldHeader}>
@@ -112,7 +116,7 @@ const createStyles = (theme) =>
       flexGrow: 1,
       paddingHorizontal: spacing.layout,
       paddingVertical: spacing.layout,
-      paddingBottom: spacing.layout * 1.5,
+      paddingBottom: spacing.layout,
       justifyContent: "flex-start",
       gap: spacing.md,
     },

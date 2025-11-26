@@ -63,8 +63,8 @@ const LessonListScreen = ({ navigation }) => {
   const handleLessonPress = (item) => {
     if (!canAccessLevel(currentLevel, item.level)) {
       Alert.alert(
-        "Aula indisponivel",
-        `Esta aula pertence ao nivel ${item.level}. Complete seu nivel atual (${currentLevel}) para desbloquear.`,
+        "Aula indisponível",
+        `Esta aula pertence ao nível ${item.level}. Complete seu nível atual (${currentLevel}) para desbloquear.`,
       );
       return;
     }
@@ -74,7 +74,7 @@ const LessonListScreen = ({ navigation }) => {
   const renderItem = ({ item }) => (
     <TouchableOpacity style={styles.card} onPress={() => handleLessonPress(item)} activeOpacity={0.85}>
       <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.level}>Nivel: {item.level}</Text>
+      <Text style={styles.level}>Nível: {item.level}</Text>
     </TouchableOpacity>
   );
 
@@ -86,9 +86,9 @@ const LessonListScreen = ({ navigation }) => {
         </TouchableOpacity>
         <View style={styles.header}>
           <View>
-            <Text style={styles.heading}>Aulas disponiveis</Text>
+            <Text style={styles.heading}>Aulas disponíveis</Text>
             <Text style={styles.subheading}>
-              {friendlyName}, escolha o nivel e encontre sua proxima aula.
+              {friendlyName}, escolha o nível e encontre sua próxima aula.
             </Text>
           </View>
           <View style={styles.filterRow}>

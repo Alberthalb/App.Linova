@@ -128,18 +128,16 @@ const LessonScreen = ({ route, navigation }) => {
 
   useEffect(() => {
     if (!lesson || !userLevel || !lesson.level || isLessonAccessible) return;
-    Alert.alert(
-      "Conteudo bloqueado",
-      `Esta aula pertence ao nivel ${lesson.level}. Complete seu nivel atual (${userLevel}) para desbloquear.`,
-      [{ text: "Ok", onPress: () => navigation.goBack() }]
-    );
+    Alert.alert("Conteúdo bloqueado", `Esta aula pertence ao nível ${lesson.level}. Complete seu nível atual (${userLevel}) para desbloquear.`, [
+      { text: "Ok", onPress: () => navigation.goBack() },
+    ]);
   }, [isLessonAccessible, lesson, navigation, userLevel]);
 
   const handleQuizPress = () => {
     if (!isLessonAccessible) {
       Alert.alert(
-        "Conteudo bloqueado",
-        `Esta aula pertence ao nivel ${lesson?.level || "superior"}. Complete seu nivel atual (${userLevel}) para desbloquear.`
+        "Conteúdo bloqueado",
+        `Esta aula pertence ao nível ${lesson?.level || "superior"}. Complete seu nível atual (${userLevel}) para desbloquear.`
       );
       return;
     }
