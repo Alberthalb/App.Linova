@@ -1,55 +1,73 @@
-# Linova - MVP de Aprendizado de Inglês
+# Linova - MVP mobile de ingles
 
-Aplicativo mobile construído com Expo + React Native para treinar inglês com aulas em vídeo, legendas, transcrições e quizzes. Este repositório reúne todas as telas do MVP (onboarding, login, trilha de aulas e área do aluno).
+Experiencia mobile criada para validar a metodologia Linova: trilhas de aulas em video, legendas sincronizadas, transcricoes e quizzes que promovem o aluno quando domina o nivel. Tudo foi desenvolvido em Expo + React Native consumindo Firebase (Auth, Firestore e Storage).
 
-## Destaques
-- Onboarding com quiz de nivelamento que recomenda onde o aluno deve iniciar.
-- Player de vídeo com legendas sincronizadas e transcrição completa da aula.
-- Quiz por aula com persistência local e em nuvem para acompanhar progresso.
-- Tema claro/escuro e navegação por abas com gesto de swipe personalizado.
-- Integração completa com Firebase (Auth, Firestore e Storage).
+## Pitch
+- Problema: estudantes iniciantes pulam de conteudo em conteudo sem saber onde focar.
+- Solucao: app de estudo guiado que aplica um quiz de nivelamento, destrava apenas o que faz sentido e coleta dados em tempo real.
+- Resultado: fluxo completo de onboarding -> aula -> quiz -> area logada pronto para demos, investors e portfolio.
+
+## Highlights do produto
+- Onboarding gamificado com quiz que sugere o nivel inicial e grava respostas no Firestore.
+- Player de video com troca de qualidade, legendas `.vtt` e transcricao rolavel.
+- Quiz por aula com normalizacao das perguntas (aceita objetos/dicionarios no Firestore), nota local criptografada (SecureStore) + sincronizacao em nuvem.
+- Gate por nivel: so acessa aulas/quiz do nivel atual e sobe automaticamente ao completar todas com nota >=70%.
+- Dashboard Home com estatisticas (dias ativos, aulas, atividades) calculadas em tempo real.
+- Area da conta com atualizacao de perfil, resumo, troca de senha, logout e exclusao completa.
+- Tema claro/escuro controlado pelo app (override forceDark no Android) e navegacao com swipe entre tabs.
 
 ## Stack principal
-- Expo 54 / React Native 0.81
-- React Navigation 7 (stack + tabs)
-- Firebase JS SDK 12 (Auth, Firestore, Storage)
-- Expo AV, Expo SecureStore e AsyncStorage
-- Google Fonts (Poppins, Inter, Manrope)
+| Camada | Tecnologias |
+| --- | --- |
+| Mobile | Expo SDK 54, React Native 0.81, React 19 |
+| Navegacao | React Navigation 7 (stack + bottom tabs) + gesto custom `useTabSwipeNavigation` |
+| Backend | Firebase Auth, Firestore, Storage (SDK 12) |
+| UX e utilitarios | Expo AV, Expo SecureStore, AsyncStorage, Expo Linking, Feather Icons, Google Fonts (Poppins/Inter/Manrope) |
+| Config | `app.config.js` com `dotenv`, plugin `plugins/disableForceDark`, EAS Build/Updates |
 
-## Estrutura resumida
+## Arquitetura em um olhar
 ```
-src/
-  components/        # Botões e UI compartilhada
-  screens/           # Fluxos (Splash, Auth, Onboarding, Home, Lessons, Account, Settings)
-  navigation/        # AppNavigator com deep linking
-  services/          # firebase.js, authService, userService
-  styles/            # Tema global (cores, tipografia, espaços)
-  utils/             # Helpers (erros do Firebase, swipe state, display name)
+App.js
+|- AppNavigator (stack + tabs + deep linking seguro)
+|  |- Splash / Welcome / Auth / Quiz de nivel
+|  |- MainTabs
+|     |- HomeStack (Home -> LessonList -> Lesson -> LessonQuiz)
+|     |- AccountStack (Account -> ChangePassword)
+|     |- Settings
 ```
+- `src/context/AppContext` centraliza usuario, nivel, tema e progresso (listeners em tempo real).
+- `LessonScreen` consome aulas do Firestore, baixa midias do Storage e salva `watched`.
+- `LessonQuizScreen` normaliza perguntas, calcula nota local/cloud e promove nivel conforme `LEVEL_SEQUENCE`.
+- `plugins/disableForceDark` garante visual consistente mesmo quando o sistema tenta forcar dark mode.
 
-## Como rodar
+## Experiencia do usuario
+1. Splash + Welcome verificam autenticacao e enviam para onboarding ou area logada.
+2. Quiz de nivel calcula media das respostas, registra sugestao de nivel e inicia em Discoverer.
+3. Home mostra saudacao, estatisticas e atalhos (incluindo placeholder de IA Coach).
+4. Lista de aulas busca `lessons` do Firestore, filtra por nivel, inclui busca textual e indicador de conclusao.
+5. Player combina video do Storage, legendas `.vtt`, transcricao completa e so libera o quiz apos assistir.
+6. Quiz mostra progresso, nota final e sincroniza resultados (>=70% marca aula como concluida e alimenta promocao de nivel).
+7. Conta + Settings liberam alteracao de perfil, resumo, troca de senha, logout e toggle de tema.
+
+## Como rodar localmente
 1. `npm install`
-2. Copie `.env.example` para `.env` e preencha `EXPO_PUBLIC_FIREBASE_*` com os dados do seu projeto Firebase.
-3. `npm start` para abrir o Expo Dev Tools. Use `npm run android`, `npm run ios` ou `npm run web` para destinos específicos.
+2. Copie `.env.example` para `.env` e preencha `EXPO_PUBLIC_FIREBASE_*` com as chaves do seu projeto.
+3. `npm start` para abrir o Expo Dev Tools. Use `npm run android`, `npm run ios` ou `npm run web` conforme o destino.
 
-O `app.config.js` lê automaticamente o `.env` e injeta as credenciais em `expo.extra.firebase`, evitando versionar chaves sensíveis.
+> `app.config.js` le o `.env` e injeta as credenciais em `expo.extra.firebase`, mantendo o repositorio livre de secrets.
 
-## Fluxo do produto
-1. Splash + Welcome: decide entre onboarding ou área logada conforme o usuário.
-2. Quiz de nível: sugere um perfil (Discoverer até Storyteller) e salva o resultado no Firestore.
-3. Home: dashboard com boas-vindas, estatísticas e atalhos para a trilha.
-4. Lista de aulas: consome `lessons` do Firestore em tempo real, com filtro por nível e busca textual. O aluno pode rever aulas de níveis anteriores, mas conteúdos de níveis superiores ficam bloqueados.
-5. Aula: player com vídeo do Storage, legendas `.vtt`, transcrição e botão para o quiz (liberado apenas para níveis já desbloqueados).
-6. Quiz da aula: normaliza qualquer estrutura enviada pelo Firestore, salva progresso (SecureStore + Firestore) e mostra pontuação final. Ao completar todas as aulas do nível atual com >=70% de acerto, o app promove automaticamente o aluno para o próximo nível.
-7. Conta e configurações: atualiza perfil, troca senha, exclui conta e alterna tema.
+## Boas praticas implementadas
+- Deep linking seguro: apenas hosts Linova `app-linova.firebaseapp.com`/`app-linova.web.app` ou scheme `linova://` abrem o fluxo de reset.
+- Progresso do quiz criptografado com SecureStore (fallback controlado para AsyncStorage).
+- Override `npm overrides.glob` evita vulnerabilidade conhecida.
+- Estrutura de dados previsivel (`lessons`, `users`, `lessonsCompleted`, `initialQuizQuestions`) e helpers para normalizar conteudo irregular do Firestore.
 
-## Práticas de segurança
-- Apenas deep links confiáveis (domínios Linova ou scheme `linova`) podem abrir o fluxo de redefinição de senha.
-- Progresso do quiz é criptografado via `expo-secure-store` com fallback controlado para AsyncStorage.
-- `npm audit` roda limpo e força `glob` >= 10.5.0 via `overrides`.
+## Roadmap curto
+- Adicionar capturas de tela e um video demo a este README.
+- Publicar um mock/seed do Firestore para quem quiser testar sem back-end real.
+- Instrumentar analytics (Firebase ou Segment) e experimentar IA Coach (placeholder ja existe no app).
 
-## Roadmap pessoal
-- Adicionar capturas das principais telas para enriquecer a apresentação.
-- Explorar gravações curtas demonstrando o player com legendas e o quiz.
-- Disponibilizar um mock de dados para quem quiser testar sem Firebase.
-
+## Quer explorar mais?
+- Arquitetura completa, modelos e rotinas operacionais estao documentados em `README.internal.md`.
+- Estrutura principal: `src/components`, `src/screens`, `src/services`, `src/utils`, `src/styles`.
+- Fique a vontade para abrir uma issue ou conversar se quiser ver este MVP em funcionamento ao vivo.
