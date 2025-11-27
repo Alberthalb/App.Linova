@@ -15,6 +15,7 @@ const withFirebaseConfig = (extra = {}) => {
 };
 
 const EAS_PROJECT_ID = process.env.EXPO_PUBLIC_EAS_PROJECT_ID || "41dd4109-384d-4c95-9b6a-f27875bcb306";
+const EAS_UPDATES_URL = process.env.EXPO_PUBLIC_EAS_UPDATES_URL || `https://u.expo.dev/${EAS_PROJECT_ID}`;
 const ANDROID_PACKAGE = process.env.EXPO_PUBLIC_ANDROID_PACKAGE || "com.linova.mvp";
 
 module.exports = ({ config }) => ({
@@ -45,6 +46,12 @@ module.exports = ({ config }) => ({
     },
     web: {
       favicon: "./assets/favicon.png",
+    },
+    updates: {
+      url: EAS_UPDATES_URL,
+    },
+    runtimeVersion: {
+      policy: "appVersion",
     },
     extra: withFirebaseConfig({
       ...(config?.extra || {}),
