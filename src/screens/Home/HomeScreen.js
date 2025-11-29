@@ -1,4 +1,4 @@
-import React, { useContext, useMemo, useState } from "react";
+import React, { useContext, useMemo, useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -8,26 +8,55 @@ import { spacing, typography, radius } from "../../styles/theme";
 import { getDisplayName } from "../../utils/userName";
 import { useThemeColors, useIsDarkMode } from "../../hooks/useThemeColors";
 import { defaultSummaryStats } from "../../utils/progressStats";
+import { normalizeLevel, LEVEL_SEQUENCE } from "../../utils/levels";
+import { collection, onSnapshot } from "firebase/firestore";
+import { db } from "../../services/firebase";
+
+const min100 = (value) => Math.max(0, Math.min(100, value));
 
 const levelDescriptions = {
-  Discoverer: "Discoverer • Você está dando os primeiros passos e explora o idioma com conteúdo guiado.",
-  Pathfinder: "Pathfinder • Entende o básico e já se vira em situações simples.",
-  Communicator: "Communicator • Conversa com consistência e entende boa parte das interações.",
-  Connector: "Connector • Se expressa com clareza em contextos sociais e profissionais.",
-  Storyteller: "Storyteller • Domina nuances, argumenta e apresenta ideias complexas em inglês.",
+  A1: "Entende frases muito simples e vocabulario inicial.",
+  A2: "Consegue lidar com rotinas e expressoes frequentes.",
+  "A2+": "Le e escreve mensagens curtas com mais confianca.",
+  B1: "Sustenta conversas basicas e entende o essencial em textos.",
+  "B1+": "Comunica-se em situacoes variadas com poucos deslizes.",
+  B2: "Produz textos claros e participa de discussoes com seguranca.",
+  "B2+": "Argumenta e compreende nuances em temas mais complexos.",
+  C1: "Usa linguagem flexivel e eficaz em contextos sociais e profissionais.",
+  "C1+": "Navega temas abstratos e tecnicos com alta precisao.",
+  C2: "Domina o idioma em nivel avancado e natural.",
 };
 
 const HomeScreen = ({ navigation }) => {
-  const { level, userName, setDarkMode, authReady, progressStats } = useContext(AppContext);
+  const { level, userName, setDarkMode, authReady, progressStats, selectedModuleId, lessonsCompleted = {} } =
+    useContext(AppContext);
   const displayName = authReady && userName ? getDisplayName(userName, null, "Linova") : "";
   const [isIaModalVisible, setIaModalVisible] = useState(false);
   const [statInfo, setStatInfo] = useState(null);
-  const [levelInfo, setLevelInfo] = useState(null);
+  const [levelInfo, setLevelInfo] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [lessonsMeta, setLessonsMeta] = useState({});
+  const [moduleLessonCounts, setModuleLessonCounts] = useState({});
   const stats = progressStats || defaultSummaryStats;
   const theme = useThemeColors();
   const isDarkMode = useIsDarkMode();
   const styles = useMemo(() => createStyles(theme), [theme]);
+  const currentLevelLabel = normalizeLevel(level);
+  const currentModuleId = selectedModuleId || Object.keys(moduleLessonCounts)[0] || null;
+  const lessonToModule = lessonsMeta;
+  const xpFromCurrentModule = Object.entries(lessonsCompleted).reduce((acc, [lessonId, entry]) => {
+    const moduleId = lessonToModule[lessonId] || null;
+    if (currentModuleId && moduleId !== currentModuleId) return acc;
+    const score = Number.isFinite(entry.score) ? entry.score : Number(entry.score);
+    const completed = entry.watched === true || (Number.isFinite(score) && score >= 70);
+    return completed ? acc + 10 : acc;
+  }, 0);
+  const xpTargetForModule = (moduleLessonCounts[currentModuleId] || 15) * 10;
+  const xpTotal = xpFromCurrentModule;
+  const currentIndex = LEVEL_SEQUENCE.indexOf(currentLevelLabel);
+  const nextLevel = currentIndex >= 0 && currentIndex < LEVEL_SEQUENCE.length - 1 ? LEVEL_SEQUENCE[currentIndex + 1] : null;
+  const progressPercent = nextLevel ? min100(Math.round((xpTotal / xpTargetForModule) * 100)) : 100;
+  const remainingXp = nextLevel ? Math.max(0, xpTargetForModule - xpTotal) : 0;
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -37,17 +66,41 @@ const HomeScreen = ({ navigation }) => {
     setIaModalVisible(true);
   };
   const closeIaModal = () => setIaModalVisible(false);
+  useEffect(() => {
+    const lessonsRef = collection(db, "lessons");
+    const unsubscribe = onSnapshot(
+      lessonsRef,
+      (snapshot) => {
+        const map = {};
+        const counts = {};
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          const moduleId = data?.moduleId || data?.module || null;
+          map[docSnap.id] = moduleId;
+          const key = moduleId || null;
+          counts[key] = (counts[key] || 0) + 1;
+        });
+        setLessonsMeta(map);
+        setModuleLessonCounts(counts);
+      },
+      () => {
+        setLessonsMeta({});
+        setModuleLessonCounts({});
+      }
+    );
+    return unsubscribe;
+  }, []);
   const handleStatPress = (type) => {
     const messages = {
-      days: `Dias em que você estudou: ${stats.days}.`,
-      lessons: `Aulas concluídas: ${stats.lessons}.`,
+      days: `Dias em que voce estudou: ${stats.days}.`,
+      lessons: `Aulas concluidas: ${stats.lessons}.`,
       activities: `Atividades respondidas: ${stats.activities}.`,
+      xp: `Pontos acumulados: ${stats.xp || 0}. Cada aula vale 10 pontos.`,
     };
     setStatInfo(messages[type]);
   };
   const handleLevelInfo = () => {
-    const description = Object.values(levelDescriptions).join("\n\n");
-    setLevelInfo(description);
+    setLevelInfo(true);
   };
 
   const handleThemeToggle = () => {
@@ -80,6 +133,10 @@ const HomeScreen = ({ navigation }) => {
             <Feather name="check-circle" size={14} color="#FFB347" />
             <Text style={styles.statText}>{stats.activities}</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.statPill} onPress={() => handleStatPress("xp")} activeOpacity={0.8}>
+            <Feather name="star" size={14} color="#8B5CF6" />
+            <Text style={styles.statText}>{stats.xp || 0}</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.themeButton} onPress={handleThemeToggle} activeOpacity={0.8}>
             <Feather name={isDarkMode ? "sun" : "moon"} size={16} color={theme.text} />
           </TouchableOpacity>
@@ -101,7 +158,7 @@ const HomeScreen = ({ navigation }) => {
           </View>
           <TouchableOpacity style={styles.levelPillFloating} onPress={handleLevelInfo} activeOpacity={0.8}>
             <Feather name="star" size={16} color={theme.primary} />
-            <Text style={styles.levelText}>{level || "Discoverer"}</Text>
+            <Text style={styles.levelText}>{currentLevelLabel}</Text>
           </TouchableOpacity>
           <View style={styles.heroActions}>
             <TouchableOpacity style={styles.heroChip} activeOpacity={0.9} onPress={() => navigation.navigate("ModuleList")}>
@@ -121,12 +178,54 @@ const HomeScreen = ({ navigation }) => {
           </View>
         </View>
       </ScrollView>
-      <Modal transparent animationType="fade" visible={isIaModalVisible || !!statInfo || !!levelInfo} onRequestClose={() => (statInfo ? setStatInfo(null) : levelInfo ? setLevelInfo(null) : closeIaModal())} statusBarTranslucent>
+      <Modal
+        transparent
+        animationType="fade"
+        visible={isIaModalVisible || !!statInfo || levelInfo}
+        onRequestClose={() => (statInfo ? setStatInfo(null) : levelInfo ? setLevelInfo(false) : closeIaModal())}
+        statusBarTranslucent
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>{statInfo ? "Seu progresso" : levelInfo ? level : "Funcao em desenvolvimento"}</Text>
-            <Text style={styles.modalText}>{statInfo || levelInfo || "A Conversação IA está em desenvolvimento e ficará disponível em breve."}</Text>
-            <TouchableOpacity style={styles.modalButton} activeOpacity={0.8} onPress={() => (statInfo ? setStatInfo(null) : levelInfo ? setLevelInfo(null) : closeIaModal())}>
+            {statInfo ? (
+              <>
+                <Text style={styles.modalTitle}>Seu progresso</Text>
+                <Text style={styles.modalText}>{statInfo}</Text>
+              </>
+            ) : levelInfo ? (
+              <>
+                <Text style={styles.modalTitle}>Seu nivel e: {currentLevelLabel}</Text>
+                {nextLevel ? (
+                  <>
+                    <View style={styles.progressWide}>
+                      <View style={[styles.progressFillWide, { width: `${progressPercent}%` }]} />
+                    </View>
+                    <Text style={styles.modalText}>
+                      Faltam {remainingXp} pontos para chegar em {nextLevel}. Cada aula concluida vale +10 pontos.
+                    </Text>
+                  </>
+                ) : (
+                  <Text style={styles.modalText}>Voce atingiu o nivel maximo.</Text>
+                )}
+                <View style={styles.levelList}>
+                  {Object.entries(levelDescriptions).map(([lvl, desc]) => (
+                    <Text key={lvl} style={[styles.levelLine, lvl === currentLevelLabel && styles.levelLineActive]}>
+                      {lvl}: {desc}
+                    </Text>
+                  ))}
+                </View>
+              </>
+            ) : (
+              <>
+                <Text style={styles.modalTitle}>Funcao em desenvolvimento</Text>
+                <Text style={styles.modalText}>A Conversacao IA esta em desenvolvimento e ficara disponivel em breve.</Text>
+              </>
+            )}
+            <TouchableOpacity
+              style={styles.modalButton}
+              activeOpacity={0.8}
+              onPress={() => (statInfo ? setStatInfo(null) : levelInfo ? setLevelInfo(false) : closeIaModal())}
+            >
               <Text style={styles.modalButtonText}>OK</Text>
             </TouchableOpacity>
           </View>
@@ -312,6 +411,30 @@ const createStyles = (colors) =>
       fontFamily: typography.fonts.body,
       fontSize: typography.body,
       color: colors.textSecondary,
+    },
+    progressWide: {
+      height: 12,
+      backgroundColor: colors.gray,
+      borderRadius: radius.md,
+      overflow: "hidden",
+      marginTop: spacing.xs,
+    },
+    progressFillWide: {
+      height: "100%",
+      backgroundColor: colors.primary,
+    },
+    levelList: {
+      gap: spacing.xs,
+      marginTop: spacing.sm,
+    },
+    levelLine: {
+      fontFamily: typography.fonts.body,
+      color: colors.text,
+      fontSize: typography.small,
+    },
+    levelLineActive: {
+      color: colors.primary,
+      fontWeight: "700",
     },
     modalButton: {
       alignSelf: "flex-end",

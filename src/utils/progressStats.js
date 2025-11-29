@@ -1,4 +1,4 @@
-export const defaultSummaryStats = { days: 0, lessons: 0, activities: 0 };
+export const defaultSummaryStats = { days: 0, lessons: 0, activities: 0, xp: 0 };
 
 export const mapProgressSnapshot = (snapshot) => {
   if (!snapshot || !snapshot.size) {
@@ -7,15 +7,20 @@ export const mapProgressSnapshot = (snapshot) => {
   const uniqueDays = new Set();
   let lessonsWatched = 0;
   let activitiesCount = 0;
+  let experiencePoints = 0;
   snapshot.docs.forEach((docSnap) => {
     const data = docSnap.data();
     const timestamp = data?.updatedAt;
     if (data?.watched) {
       lessonsWatched += 1;
+      experiencePoints += Number.isFinite(data?.xp) ? data.xp : 10;
     }
     const score = Number.isFinite(data?.score) ? data.score : Number(data?.score);
     if (Number.isFinite(score) && score >= 70) {
       activitiesCount += 1;
+      if (!data?.watched) {
+        experiencePoints += Number.isFinite(data?.xp) ? data.xp : 10;
+      }
     }
     if (timestamp?.toDate) {
       const dayKey = timestamp.toDate().toISOString().slice(0, 10);
@@ -26,5 +31,6 @@ export const mapProgressSnapshot = (snapshot) => {
     days: uniqueDays.size || 1,
     lessons: lessonsWatched,
     activities: activitiesCount,
+    xp: experiencePoints,
   };
 };

@@ -331,7 +331,7 @@ const LessonScreen = ({ route, navigation }) => {
             <View style={styles.header}>
               <View>
                 <Text style={styles.heading}>{lesson?.title || "Aula"}</Text>
-                <Text style={styles.subheading}>Nível: {lesson?.level || "Discoverer"}</Text>
+                <Text style={styles.subheading}>Nível: {lesson?.level || "A1"}</Text>
               </View>
               <View style={styles.tag}>
                 <Feather name="clock" size={14} color={theme.background} />

@@ -70,6 +70,7 @@ export const saveLessonProgress = async (uid, lessonId, payload = {}) => {
     target,
     {
       ...payload,
+      xp: payload?.xp ?? 10,
       updatedAt: serverTimestamp(),
     },
     { merge: true }

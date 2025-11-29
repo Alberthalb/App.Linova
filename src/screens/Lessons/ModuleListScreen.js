@@ -1,4 +1,4 @@
-import React, { useContext, useMemo, useState } from "react";
+import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -6,30 +6,101 @@ import { AppContext } from "../../context/AppContext";
 import { useThemeColors } from "../../hooks/useThemeColors";
 import { spacing, typography, radius } from "../../styles/theme";
 import CustomButton from "../../components/CustomButton";
-import { createOrUpdateUserProfile } from "../../services/userService";
+import { createOrUpdateUserProfile, saveModuleUnlock } from "../../services/userService";
+import { collection, onSnapshot } from "firebase/firestore";
+import { db } from "../../services/firebase";
 
 const FALLBACK_MODULES = [
-  { id: "module-1", title: "Módulo 1 · Iniciante", levelTag: "Discoverer", description: "Primeiros passos e vocabulário essencial.", order: 0 },
-  { id: "module-2", title: "Módulo 2 · Básico", levelTag: "Pathfinder", description: "Frases do dia a dia e compreensão inicial.", order: 1 },
-  { id: "module-3", title: "Módulo 3 · Intermediário", levelTag: "Communicator", description: "Conversas guiadas e listening prático.", order: 2 },
-  { id: "module-4", title: "Módulo 4 · Intermediário+", levelTag: "Connector", description: "Contextos sociais/profissionais e narrativas.", order: 3 },
-  { id: "module-5", title: "Módulo 5 · Avançado", levelTag: "Storyteller", description: "Apresentações, argumentos e nuances.", order: 4 },
+  { id: "module-a1", title: "Modulo A1", levelTag: "A1", description: "Primeiros passos e vocabulario essencial.", order: 0 },
+  { id: "module-a2", title: "Modulo A2", levelTag: "A2", description: "Rotinas e expressoes frequentes.", order: 1 },
+  { id: "module-a2-plus", title: "Modulo A2+", levelTag: "A2+", description: "Mensagens curtas e leitura guiada.", order: 2 },
+  { id: "module-b1", title: "Modulo B1", levelTag: "B1", description: "Conversas basicas e compreensao geral.", order: 3 },
+  { id: "module-b1-plus", title: "Modulo B1+", levelTag: "B1+", description: "Comunicacao mais segura em situacoes variadas.", order: 4 },
+  { id: "module-b2", title: "Modulo B2", levelTag: "B2", description: "Textos claros e discussoes com confianca.", order: 5 },
+  { id: "module-b2-plus", title: "Modulo B2+", levelTag: "B2+", description: "Argumentacao e nuances em temas complexos.", order: 6 },
+  { id: "module-c1", title: "Modulo C1", levelTag: "C1", description: "Linguagem flexivel em contextos profissionais.", order: 7 },
+  { id: "module-c1-plus", title: "Modulo C1+", levelTag: "C1+", description: "Precisao alta em temas tecnicos e abstratos.", order: 8 },
+  { id: "module-c2", title: "Modulo C2", levelTag: "C2", description: "Dominio avancado e naturalidade plena.", order: 9 },
 ];
 
 const ModuleListScreen = ({ navigation }) => {
-  const { modules, moduleUnlocks, selectedModuleId, setSelectedModuleId, currentUser } = useContext(AppContext);
+  const { modules, moduleUnlocks, selectedModuleId, setSelectedModuleId, currentUser, lessonsCompleted = {} } = useContext(AppContext);
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const [pendingModule, setPendingModule] = useState(null);
+  const [lessons, setLessons] = useState([]);
+  const [moduleProgress, setModuleProgress] = useState({});
 
   const availableModules = modules?.length ? modules : FALLBACK_MODULES;
   const firstModuleId = availableModules[0]?.id || null;
+
+  const computeModuleProgress = useCallback((lessonList, fallbackModuleId) => {
+    const summary = {};
+    lessonList.forEach((lesson) => {
+      const moduleId = lesson.moduleId || fallbackModuleId || "unassigned";
+      if (!summary[moduleId]) {
+        summary[moduleId] = { total: 0, earned: 0 };
+      }
+      summary[moduleId].total += 1;
+      const entry = lessonsCompleted[lesson.id] || {};
+      const score = Number.isFinite(entry.score) ? entry.score : Number(entry.score);
+      const completed = entry.watched === true || (Number.isFinite(score) && score >= 70);
+      if (completed) {
+        summary[moduleId].earned += 10;
+      }
+    });
+    Object.keys(summary).forEach((key) => {
+      summary[key].required = summary[key].total * 10;
+    });
+    setModuleProgress(summary);
+  }, [lessonsCompleted]);
+
+  useEffect(() => {
+    const lessonsRef = collection(db, "lessons");
+    const unsubscribe = onSnapshot(
+      lessonsRef,
+      (snapshot) => {
+        const list = snapshot.docs.map((docSnap, index) => {
+          const data = docSnap.data();
+          return {
+            id: docSnap.id,
+            title: data?.title || `Aula ${index + 1}`,
+            moduleId: data?.moduleId || data?.module || null,
+          };
+        });
+        setLessons(list);
+        computeModuleProgress(list, availableModules[0]?.id || null);
+      },
+      () => {
+        setLessons([]);
+        setModuleProgress({});
+      }
+    );
+    return unsubscribe;
+  }, [availableModules, computeModuleProgress]);
+
+  useEffect(() => {
+    if (!lessons.length) return;
+    computeModuleProgress(lessons, availableModules[0]?.id || null);
+  }, [lessons, availableModules, computeModuleProgress]);
+
+  useEffect(() => {
+    if (!currentUser?.uid) return;
+    Object.entries(moduleProgress).forEach(([moduleId, progress]) => {
+      const entry = moduleUnlocks?.[moduleId];
+      if (progress?.required > 0 && progress?.earned >= progress.required && !entry) {
+        saveModuleUnlock(currentUser.uid, moduleId, { passed: true, status: "unlocked", reason: "xp" });
+      }
+    });
+  }, [moduleProgress, moduleUnlocks, currentUser?.uid]);
 
   const isUnlocked = (moduleId, index) => {
     if (!moduleId) return false;
     if (index === 0 || moduleId === firstModuleId) return true;
     const entry = moduleUnlocks?.[moduleId];
-    return entry?.passed === true || entry?.status === "unlocked";
+    const progress = moduleProgress?.[moduleId];
+    const meetsXp = progress?.required > 0 && progress?.earned >= progress.required;
+    return entry?.passed === true || entry?.status === "unlocked" || meetsXp;
   };
 
   const handleEnterModule = async (module) => {
@@ -59,6 +130,7 @@ const ModuleListScreen = ({ navigation }) => {
   const renderItem = ({ item, index }) => {
     const unlocked = isUnlocked(item.id, index);
     const selected = item.id === selectedModuleId;
+    const progress = moduleProgress?.[item.id] || { earned: 0, required: 0 };
     return (
       <TouchableOpacity style={[styles.card, selected && styles.cardSelected]} activeOpacity={0.85} onPress={() => handleEnterModule(item)}>
         <View style={styles.cardHeader}>
@@ -228,6 +300,11 @@ const createStyles = (colors) =>
     badgeText: { fontFamily: typography.fonts.body, fontSize: typography.small, fontWeight: "700" },
     badgeTextUnlocked: { color: colors.background },
     badgeTextLocked: { color: colors.accent },
+    xpText: {
+      color: colors.muted,
+      fontFamily: typography.fonts.body,
+      fontSize: typography.small,
+    },
     assessmentLink: {
       flexDirection: "row",
       alignItems: "center",

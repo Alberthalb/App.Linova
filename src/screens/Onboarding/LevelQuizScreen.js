@@ -105,17 +105,25 @@ const LevelQuizScreen = ({ navigation }) => {
   const finalizeLevel = async () => {
     const score = Object.values(answers).reduce((acc, val) => acc + val, 0);
     const average = score / totalSteps;
-    let computedLevel = "Discoverer";
-    if (average >= 2.5) {
-      computedLevel = "Storyteller";
-    } else if (average >= 2) {
-      computedLevel = "Connector";
-    } else if (average >= 1.5) {
-      computedLevel = "Communicator";
-    } else if (average >= 1.2) {
-      computedLevel = "Pathfinder";
+    let computedLevel = "A1";
+    if (average >= 2.97) {
+      computedLevel = "C1+";
+    } else if (average >= 2.9) {
+      computedLevel = "C1";
+    } else if (average >= 2.7) {
+      computedLevel = "B2+";
+    } else if (average >= 2.5) {
+      computedLevel = "B2";
+    } else if (average >= 2.3) {
+      computedLevel = "B1+";
+    } else if (average >= 2.1) {
+      computedLevel = "B1";
+    } else if (average >= 1.9) {
+      computedLevel = "A2+";
+    } else if (average >= 1.6) {
+      computedLevel = "A2";
     }
-    const startingLevel = "Discoverer";
+    const startingLevel = computedLevel;
     setLevel(startingLevel);
     if (currentUser?.uid) {
       try {

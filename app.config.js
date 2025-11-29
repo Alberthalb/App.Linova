@@ -35,6 +35,7 @@ module.exports = ({ config }) => ({
     },
     ios: {
       supportsTablet: true,
+      jsEngine: "hermes",
     },
     android: {
       adaptiveIcon: {
@@ -43,6 +44,7 @@ module.exports = ({ config }) => ({
       },
       edgeToEdgeEnabled: true,
       package: ANDROID_PACKAGE,
+      jsEngine: "hermes",
     },
     web: {
       favicon: "./assets/favicon.png",

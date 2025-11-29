@@ -104,9 +104,10 @@ const AccountScreen = ({ navigation }) => {
 
   const handleSummaryPress = (type) => {
     const messages = {
-      days: `Dias em que você estudou: ${summaryStats.days}.`,
-      lessons: `Aulas concluídas: ${summaryStats.lessons}.`,
+      days: `Dias em que voce estudou: ${summaryStats.days}.`,
+      lessons: `Aulas concluidas: ${summaryStats.lessons}.`,
       activities: `Atividades respondidas: ${summaryStats.activities}.`,
+      xp: `Pontos acumulados: ${summaryStats.xp || 0}. Cada aula vale 10 pontos.`,
     };
     setStatInfo(messages[type]);
   };
@@ -181,8 +182,12 @@ const AccountScreen = ({ navigation }) => {
               <Feather name="check-circle" size={16} color="#FFB347" />
               <Text style={styles.summaryValue}>{summaryStats.activities} atividades</Text>
             </TouchableOpacity>
+            <TouchableOpacity style={[styles.summaryTile, { borderColor: "#8B5CF6" }]} activeOpacity={0.85} onPress={() => handleSummaryPress("xp")}>
+              <Feather name="star" size={16} color="#8B5CF6" />
+              <Text style={styles.summaryValue}>{summaryStats.xp || 0} pontos</Text>
+            </TouchableOpacity>
           </View>
-          <Text style={styles.summaryHint}>Esses números refletem seu uso recente e ajudam a acompanhar seu progresso.</Text>
+          <Text style={styles.summaryHint}>Esses numeros refletem seu uso recente e ajudam a acompanhar seu progresso.</Text>
         </View>
 
         <CustomButton title="Alterar senha" variant="ghost" onPress={() => navigation.navigate("ChangePassword")} />
@@ -311,6 +316,7 @@ const createStyles = (colors) =>
       flexDirection: "row",
       justifyContent: "space-between",
       gap: spacing.sm,
+      flexWrap: "wrap",
     },
     summaryTile: {
       flex: 1,

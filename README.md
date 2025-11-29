@@ -8,7 +8,7 @@ Experiencia mobile criada para validar a metodologia Linova: trilhas de aulas em
 - Resultado: fluxo completo de onboarding -> aula -> quiz -> area logada pronto para demos, investors e portfolio.
 
 ## Highlights do produto
-- Onboarding gamificado com quiz que sugere o nivel inicial e grava respostas no Firestore.
+- Onboarding gamificado com quiz que sugere o nivel inicial (A1–C2) e grava respostas no Firestore.
 - Player de video com troca de qualidade, legendas `.vtt` e transcricao rolavel.
 - Quiz por aula com normalizacao das perguntas (aceita objetos/dicionarios no Firestore), nota local criptografada (SecureStore) + sincronizacao em nuvem.
 - Gate por nivel: so acessa aulas/quiz do nivel atual e sobe automaticamente ao completar todas com nota >=70%.

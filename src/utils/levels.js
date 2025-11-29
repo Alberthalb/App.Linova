@@ -1,4 +1,20 @@
-export const LEVEL_SEQUENCE = ["Discoverer", "Pathfinder", "Communicator", "Connector", "Storyteller"];
+export const LEVEL_SEQUENCE = ["A1", "A2", "A2+", "B1", "B1+", "B2", "B2+", "C1", "C1+", "C2"];
+
+const LEGACY_MAP = {
+  Discoverer: "A1",
+  Pathfinder: "A2",
+  Communicator: "B1",
+  Connector: "B2",
+  Storyteller: "C1",
+};
+
+export const normalizeLevel = (value) => {
+  if (!value) return "A1";
+  const trimmed = String(value).trim();
+  if (LEVEL_SEQUENCE.includes(trimmed)) return trimmed;
+  const mapped = LEGACY_MAP[trimmed];
+  return mapped || "A1";
+};
 
 export const getNextLevel = (level) => {
   const index = LEVEL_SEQUENCE.indexOf(level);

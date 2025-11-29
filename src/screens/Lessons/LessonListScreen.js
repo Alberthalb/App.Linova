@@ -55,7 +55,7 @@ const LessonListScreen = ({ navigation, route }) => {
           return {
             id: docSnap.id,
             title: payload.title || "Aula",
-            level: payload.level || "Discoverer",
+            level: payload.level || "A1",
             order: payload.order ?? 0,
             moduleId: payload.moduleId || payload.module || null,
           };
