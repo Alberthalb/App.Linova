@@ -33,6 +33,7 @@ const HomeScreen = ({ navigation }) => {
   const displayName = authReady && userName ? getDisplayName(userName, null, "Linova") : "";
   const [isIaModalVisible, setIaModalVisible] = useState(false);
   const [statInfo, setStatInfo] = useState(null);
+  const [statType, setStatType] = useState(null);
   const [levelInfo, setLevelInfo] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [lessonsMeta, setLessonsMeta] = useState({});
@@ -57,6 +58,38 @@ const HomeScreen = ({ navigation }) => {
   const nextLevel = currentIndex >= 0 && currentIndex < LEVEL_SEQUENCE.length - 1 ? LEVEL_SEQUENCE[currentIndex + 1] : null;
   const progressPercent = nextLevel ? min100(Math.round((xpTotal / xpTargetForModule) * 100)) : 100;
   const remainingXp = nextLevel ? Math.max(0, xpTargetForModule - xpTotal) : 0;
+  const streakDays = useMemo(() => {
+    const daysSet = new Set();
+    Object.values(lessonsCompleted || {}).forEach((entry) => {
+      const score = Number.isFinite(entry?.score) ? entry.score : Number(entry?.score);
+      const watched = entry?.watched === true;
+      const studied = watched || (Number.isFinite(score) && score > 0);
+      if (!studied) return;
+      const ts = entry?.updatedAt;
+      let dateObj = null;
+      if (ts?.toDate) {
+        dateObj = ts.toDate();
+      } else if (typeof ts === "number") {
+        dateObj = new Date(ts);
+      } else if (typeof ts === "string") {
+        dateObj = new Date(ts);
+      }
+      if (dateObj && !Number.isNaN(dateObj.getTime())) {
+        daysSet.add(dateObj.toISOString().slice(0, 10));
+      }
+    });
+    if (!daysSet.size) return 0;
+    const today = new Date();
+    let streak = 0;
+    for (let offset = 0; offset < 365; offset += 1) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - offset);
+      const key = d.toISOString().slice(0, 10);
+      if (daysSet.has(key)) streak += 1;
+      else break;
+    }
+    return streak;
+  }, [lessonsCompleted]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -92,11 +125,12 @@ const HomeScreen = ({ navigation }) => {
   }, []);
   const handleStatPress = (type) => {
     const messages = {
-      days: `Dias em que voce estudou: ${stats.days}.`,
+      days: `Dias estudando: ${streakDays || 0}. Você já estudou em ${streakDays || 0} dia(s); continue para manter a sequência!`,
       lessons: `Aulas concluidas: ${stats.lessons}.`,
       activities: `Atividades respondidas: ${stats.activities}.`,
       xp: `Pontos acumulados: ${stats.xp || 0}. Cada aula vale 10 pontos.`,
     };
+    setStatType(type);
     setStatInfo(messages[type]);
   };
   const handleLevelInfo = () => {
@@ -125,6 +159,10 @@ const HomeScreen = ({ navigation }) => {
       >
         <View style={styles.container}>
         <View style={styles.topBar}>
+          <TouchableOpacity style={styles.statPill} onPress={() => handleStatPress("days")} activeOpacity={0.8}>
+            <Feather name="sunrise" size={14} color="#FB923C" />
+            <Text style={styles.statText}>{streakDays || 0}</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.statPill} onPress={() => handleStatPress("lessons")} activeOpacity={0.8}>
             <Feather name="book" size={14} color="#3D7FFC" />
             <Text style={styles.statText}>{stats.lessons}</Text>
@@ -182,14 +220,23 @@ const HomeScreen = ({ navigation }) => {
         transparent
         animationType="fade"
         visible={isIaModalVisible || !!statInfo || levelInfo}
-        onRequestClose={() => (statInfo ? setStatInfo(null) : levelInfo ? setLevelInfo(false) : closeIaModal())}
+        onRequestClose={() => {
+          if (statInfo) {
+            setStatInfo(null);
+            setStatType(null);
+          } else if (levelInfo) {
+            setLevelInfo(false);
+          } else {
+            closeIaModal();
+          }
+        }}
         statusBarTranslucent
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             {statInfo ? (
               <>
-                <Text style={styles.modalTitle}>Seu progresso</Text>
+                <Text style={styles.modalTitle}>{statType === "days" ? "Dias de estudo" : "Seu progresso"}</Text>
                 <Text style={styles.modalText}>{statInfo}</Text>
               </>
             ) : levelInfo ? (
@@ -224,7 +271,16 @@ const HomeScreen = ({ navigation }) => {
             <TouchableOpacity
               style={styles.modalButton}
               activeOpacity={0.8}
-              onPress={() => (statInfo ? setStatInfo(null) : levelInfo ? setLevelInfo(false) : closeIaModal())}
+              onPress={() => {
+                if (statInfo) {
+                  setStatInfo(null);
+                  setStatType(null);
+                } else if (levelInfo) {
+                  setLevelInfo(false);
+                } else {
+                  closeIaModal();
+                }
+              }}
             >
               <Text style={styles.modalButtonText}>OK</Text>
             </TouchableOpacity>

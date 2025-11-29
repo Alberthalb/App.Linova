@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState, useCallback } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -10,6 +10,7 @@ import { createOrUpdateUserProfile, saveModuleUnlock } from "../../services/user
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../../services/firebase";
 
+const FILTER_TAGS = ["Iniciante", "Intermediario", "Avancado"];
 const FALLBACK_MODULES = [
   { id: "module-a1", title: "Modulo A1", levelTag: "A1", description: "Primeiros passos e vocabulario essencial.", order: 0 },
   { id: "module-a2", title: "Modulo A2", levelTag: "A2", description: "Rotinas e expressoes frequentes.", order: 1 },
@@ -23,37 +24,45 @@ const FALLBACK_MODULES = [
   { id: "module-c2", title: "Modulo C2", levelTag: "C2", description: "Dominio avancado e naturalidade plena.", order: 9 },
 ];
 
+const LEVEL_SEQUENCE = ["A1", "A2", "A2+", "B1", "B1+", "B2", "B2+", "C1", "C1+", "C2"];
+const levelOrder = (tag) => {
+  const idx = LEVEL_SEQUENCE.indexOf(tag);
+  return idx === -1 ? Number.MAX_SAFE_INTEGER : idx;
+};
+
+const levelBucket = (tag) => {
+  if (!tag) return "Outros";
+  if (["A1", "A2", "A2+"].includes(tag)) return "Iniciante";
+  if (["B1", "B1+", "B2", "B2+"].includes(tag)) return "Intermediario";
+  if (["C1", "C1+", "C2"].includes(tag)) return "Avancado";
+  return "Outros";
+};
+
 const ModuleListScreen = ({ navigation }) => {
   const { modules, moduleUnlocks, selectedModuleId, setSelectedModuleId, currentUser, lessonsCompleted = {} } = useContext(AppContext);
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
+  const [filter, setFilter] = useState("Iniciante");
   const [pendingModule, setPendingModule] = useState(null);
   const [lessons, setLessons] = useState([]);
-  const [moduleProgress, setModuleProgress] = useState({});
+  const isFirstLogin = useMemo(() => {
+    const creation = currentUser?.metadata?.creationTime;
+    const lastSignIn = currentUser?.metadata?.lastSignInTime;
+    return creation && lastSignIn && creation === lastSignIn;
+  }, [currentUser?.metadata?.creationTime, currentUser?.metadata?.lastSignInTime]);
 
-  const availableModules = modules?.length ? modules : FALLBACK_MODULES;
+  const availableModules = useMemo(() => {
+    const source = modules?.length ? modules : FALLBACK_MODULES;
+    return source
+      .slice()
+      .sort((a, b) => {
+        const orderA = Number.isFinite(a?.order) ? a.order : levelOrder(a?.levelTag);
+        const orderB = Number.isFinite(b?.order) ? b.order : levelOrder(b?.levelTag);
+        return orderA - orderB;
+      });
+  }, [modules]);
+
   const firstModuleId = availableModules[0]?.id || null;
-
-  const computeModuleProgress = useCallback((lessonList, fallbackModuleId) => {
-    const summary = {};
-    lessonList.forEach((lesson) => {
-      const moduleId = lesson.moduleId || fallbackModuleId || "unassigned";
-      if (!summary[moduleId]) {
-        summary[moduleId] = { total: 0, earned: 0 };
-      }
-      summary[moduleId].total += 1;
-      const entry = lessonsCompleted[lesson.id] || {};
-      const score = Number.isFinite(entry.score) ? entry.score : Number(entry.score);
-      const completed = entry.watched === true || (Number.isFinite(score) && score >= 70);
-      if (completed) {
-        summary[moduleId].earned += 10;
-      }
-    });
-    Object.keys(summary).forEach((key) => {
-      summary[key].required = summary[key].total * 10;
-    });
-    setModuleProgress(summary);
-  }, [lessonsCompleted]);
 
   useEffect(() => {
     const lessonsRef = collection(db, "lessons");
@@ -69,20 +78,32 @@ const ModuleListScreen = ({ navigation }) => {
           };
         });
         setLessons(list);
-        computeModuleProgress(list, availableModules[0]?.id || null);
       },
-      () => {
-        setLessons([]);
-        setModuleProgress({});
-      }
+      () => setLessons([])
     );
     return unsubscribe;
-  }, [availableModules, computeModuleProgress]);
+  }, []);
 
-  useEffect(() => {
-    if (!lessons.length) return;
-    computeModuleProgress(lessons, availableModules[0]?.id || null);
-  }, [lessons, availableModules, computeModuleProgress]);
+  const moduleProgress = useMemo(() => {
+    const summary = {};
+    lessons.forEach((lesson) => {
+      const moduleId = lesson.moduleId || firstModuleId || "unassigned";
+      if (!summary[moduleId]) {
+        summary[moduleId] = { total: 0, earned: 0 };
+      }
+      summary[moduleId].total += 1;
+      const entry = lessonsCompleted[lesson.id] || {};
+      const score = Number.isFinite(entry.score) ? entry.score : Number(entry.score);
+      const completed = entry.watched === true || (Number.isFinite(score) && score >= 70);
+      if (completed) {
+        summary[moduleId].earned += 10;
+      }
+    });
+    Object.keys(summary).forEach((key) => {
+      summary[key].required = summary[key].total * 10;
+    });
+    return summary;
+  }, [lessons, lessonsCompleted, firstModuleId]);
 
   useEffect(() => {
     if (!currentUser?.uid) return;
@@ -103,9 +124,13 @@ const ModuleListScreen = ({ navigation }) => {
     return entry?.passed === true || entry?.status === "unlocked" || meetsXp;
   };
 
+  const filteredModules = useMemo(() => {
+    return availableModules.filter((item) => levelBucket(item.levelTag) === filter);
+  }, [availableModules, filter]);
+
   const handleEnterModule = async (module) => {
     if (!module?.id) {
-      Alert.alert("Módulo indisponível", "Nenhum módulo cadastrado no momento.");
+      Alert.alert("Modulo indisponivel", "Nenhum modulo cadastrado no momento.");
       return;
     }
     const moduleIndex = availableModules.findIndex((item) => item.id === module.id);
@@ -127,6 +152,18 @@ const ModuleListScreen = ({ navigation }) => {
     setPendingModule(null);
   };
 
+  const renderFilterChip = useCallback(
+    ({ item: tag }) => {
+      const active = filter === tag;
+      return (
+        <TouchableOpacity style={[styles.chip, active && styles.chipActive]} onPress={() => setFilter(tag)} activeOpacity={0.85}>
+          <Text style={[styles.chipText, active && styles.chipTextActive]}>{tag}</Text>
+        </TouchableOpacity>
+      );
+    },
+    [filter, styles]
+  );
+
   const renderItem = ({ item, index }) => {
     const unlocked = isUnlocked(item.id, index);
     const selected = item.id === selectedModuleId;
@@ -145,9 +182,12 @@ const ModuleListScreen = ({ navigation }) => {
             </Text>
           </View>
         </View>
-        {item.levelTag ? <Text style={styles.levelTag}>Nível sugerido: {item.levelTag}</Text> : null}
+        {item.levelTag ? <Text style={styles.levelTag}>Nivel sugerido: {item.levelTag}</Text> : null}
         {item.description ? <Text style={styles.description}>{item.description}</Text> : null}
-        {selected ? <Text style={styles.selectedHint}>Módulo selecionado</Text> : null}
+        <Text style={styles.progressText}>
+          {progress.earned} / {progress.required || 0} pontos
+        </Text>
+        {selected ? <Text style={styles.selectedHint}>Modulo selecionado</Text> : null}
         {!unlocked && (
           <TouchableOpacity style={styles.assessmentLink} onPress={() => setPendingModule(item)} activeOpacity={0.8}>
             <Feather name="edit-3" size={14} color={theme.accent} />
@@ -165,27 +205,36 @@ const ModuleListScreen = ({ navigation }) => {
           <Feather name="chevron-left" size={20} color={theme.primary} />
           <Text style={styles.backText}>Voltar</Text>
         </TouchableOpacity>
-        <Text style={styles.heading}>Escolha um módulo</Text>
+        <Text style={styles.heading}>Escolha um modulo</Text>
         <Text style={styles.subheading}>
-          No primeiro acesso, inicie pelo Módulo 1. Para pular para outro módulo, conclua a prova de capacidade.
+          {isFirstLogin
+            ? "No primeiro acesso, comece pelo Modulo 1. Para pular para outro modulo, conclua a prova de capacidade."
+            : "Para pular para outro modulo, conclua a prova de capacidade."}
         </Text>
         <FlatList
-          data={availableModules}
+          data={FILTER_TAGS}
+          keyExtractor={(item) => item}
+          renderItem={renderFilterChip}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterRow}
+          ItemSeparatorComponent={() => <View style={{ width: spacing.sm }} />}
+        />
+        <FlatList
+          data={filteredModules}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
           contentContainerStyle={styles.list}
           ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
           showsVerticalScrollIndicator={false}
         />
-        {availableModules.length === 0 ? (
+        {filteredModules.length === 0 ? (
           <CustomButton title="Ver aulas" onPress={() => navigation.navigate("LessonList")} />
         ) : (
           <CustomButton
-            title="Ir para aulas do módulo atual"
+            title="Ir para aulas do modulo atual"
             onPress={() =>
-              handleEnterModule(
-                availableModules.find((item) => item.id === selectedModuleId) || availableModules[0] || { id: null }
-              )
+              handleEnterModule(filteredModules.find((item) => item.id === selectedModuleId) || filteredModules[0] || { id: null })
             }
           />
         )}
@@ -194,9 +243,7 @@ const ModuleListScreen = ({ navigation }) => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>Prova de capacidade</Text>
-            <Text style={styles.modalText}>
-              Para acessar "{pendingModule.title}", conclua a prova rápida. Se aprovado, o módulo será liberado.
-            </Text>
+            <Text style={styles.modalText}>Para acessar "{pendingModule.title}", conclua a prova rapida. Se aprovado, o modulo sera liberado.</Text>
             <View style={styles.modalActions}>
               <TouchableOpacity onPress={() => setPendingModule(null)} style={styles.modalGhost} activeOpacity={0.8}>
                 <Text style={styles.modalGhostText}>Cancelar</Text>
@@ -231,6 +278,47 @@ const createStyles = (colors) =>
       fontFamily: typography.fonts.body,
       color: colors.muted,
       marginBottom: spacing.sm,
+    },
+    filterRow: {
+      flexDirection: "row",
+      marginBottom: spacing.sm,
+      paddingHorizontal: spacing.xs,
+      alignItems: "center",
+      paddingVertical: spacing.xs,
+      marginTop: spacing.xs,
+    },
+    chip: {
+      minHeight: 36,
+      paddingVertical: spacing.xs,
+      paddingHorizontal: spacing.md + spacing.xs,
+      borderRadius: radius.sm,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      minWidth: 110,
+      alignItems: "center",
+      justifyContent: "center",
+      elevation: 1,
+    },
+    chipActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+      shadowColor: colors.primary,
+      shadowOpacity: 0.12,
+      shadowRadius: 6,
+      elevation: 3,
+    },
+    chipText: {
+      fontFamily: typography.fonts.body,
+      fontWeight: "700",
+      color: colors.primary,
+      fontSize: typography.small,
+      textAlign: "center",
+      textAlignVertical: "center",
+      includeFontPadding: false,
+    },
+    chipTextActive: {
+      color: colors.surface,
     },
     list: {
       paddingVertical: spacing.sm,
@@ -276,6 +364,11 @@ const createStyles = (colors) =>
       fontSize: typography.body,
       lineHeight: 20,
     },
+    progressText: {
+      color: colors.muted,
+      fontFamily: typography.fonts.body,
+      fontSize: typography.small,
+    },
     selectedHint: {
       color: colors.primary,
       fontFamily: typography.fonts.body,
@@ -300,11 +393,6 @@ const createStyles = (colors) =>
     badgeText: { fontFamily: typography.fonts.body, fontSize: typography.small, fontWeight: "700" },
     badgeTextUnlocked: { color: colors.background },
     badgeTextLocked: { color: colors.accent },
-    xpText: {
-      color: colors.muted,
-      fontFamily: typography.fonts.body,
-      fontSize: typography.small,
-    },
     assessmentLink: {
       flexDirection: "row",
       alignItems: "center",
@@ -355,9 +443,8 @@ const createStyles = (colors) =>
     },
     modalText: {
       fontFamily: typography.fonts.body,
-      color: colors.textSecondary,
       fontSize: typography.body,
-      lineHeight: 20,
+      color: colors.textSecondary,
     },
     modalActions: {
       flexDirection: "row",

@@ -6,6 +6,8 @@ import { spacing, typography, radius } from "../../styles/theme";
 import { AppContext } from "../../context/AppContext";
 import { getDisplayName } from "../../utils/userName";
 import { useThemeColors } from "../../hooks/useThemeColors";
+import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
+import { db } from "../../services/firebase";
 import { canAccessLevel } from "../../utils/levels";
 import CustomButton from "../../components/CustomButton";
 
@@ -44,20 +46,34 @@ const LessonListScreen = ({ navigation, route }) => {
   );
 
   useEffect(() => {
-    const moduleA = modules[0]?.id || "mock-a1";
-    const staticLessons = [
-      { id: "mock-1", title: "Aula 01 - Introducao", level: "A1", order: 1, moduleId: moduleA },
-      { id: "mock-2", title: "Aula 02 - Basico", level: "A1", order: 2, moduleId: moduleA },
-      { id: "mock-3", title: "Aula 03 - Intermediario", level: "A1", order: 3, moduleId: moduleA },
-      { id: "mock-4", title: "Aula 04 - Pratica", level: "A1", order: 4, moduleId: moduleA },
-    ];
-    setLessons(staticLessons);
-    setAvailableLevels(["Todas", "A1"]);
-    setLoading(false);
-  }, [modules]);
+    const lessonsQuery = query(collection(db, "lessons"), orderBy("order"));
+    const unsubscribe = onSnapshot(
+      lessonsQuery,
+      (snapshot) => {
+        const data = snapshot.docs.map((docSnap) => {
+          const payload = docSnap.data();
+          return {
+            id: docSnap.id,
+            title: payload.title || "Aula",
+            level: payload.level || "A1",
+            order: payload.order ?? 0,
+            moduleId: payload.moduleId || payload.module || null,
+          };
+        });
+        setLessons(data);
+        const levels = Array.from(new Set(data.map((item) => item.level))).filter(Boolean);
+        setAvailableLevels(["Todas", ...levels]);
+        setLoading(false);
+      },
+      () => setLoading(false)
+    );
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
-    setFilter("Todas");
+    if (currentLevel) {
+      setFilter(currentLevel);
+    }
   }, [currentLevel]);
 
   useEffect(() => {
@@ -87,18 +103,18 @@ const LessonListScreen = ({ navigation, route }) => {
     if (!modulesEnabled || !activeModuleId) return;
     if (!isModuleUnlocked(activeModuleId)) {
       Alert.alert(
-        "Mdulo bloqueado",
-        "Complete a prova de capacidade para liberar este mdulo.",
+        "Módulo bloqueado",
+        "Complete a prova de capacidade para liberar este módulo.",
         [
           {
             text: "Fazer prova",
             onPress: () =>
               navigation.replace("ModuleAssessment", {
                 moduleId: activeModuleId,
-                moduleTitle: activeModule?.title || "Mdulo",
+                moduleTitle: activeModule?.title || "Módulo",
               }),
           },
-          { text: "Escolher mdulo", onPress: () => navigation.replace("ModuleList") },
+          { text: "Escolher módulo", onPress: () => navigation.replace("ModuleList") },
         ],
         { cancelable: true }
       );
@@ -121,8 +137,8 @@ const LessonListScreen = ({ navigation, route }) => {
   const handleLessonPress = (item) => {
     if (!canAccessLevel(currentLevel, item.level)) {
       Alert.alert(
-        "Aula indisponvel",
-        `Esta aula pertence ao nvel ${item.level}. Complete seu nvel atual (${currentLevel}) para desbloquear.`
+        "Aula indisponível",
+        `Esta aula pertence ao nível ${item.level}. Complete seu nível atual (${currentLevel}) para desbloquear.`
       );
       return;
     }
@@ -148,7 +164,7 @@ const LessonListScreen = ({ navigation, route }) => {
             </View>
           )}
         </View>
-        <Text style={styles.level}>Modulo {item.level}</Text>
+        <Text style={styles.level}>Nivel: {item.level}</Text>
       </TouchableOpacity>
     );
   };
@@ -161,15 +177,37 @@ const LessonListScreen = ({ navigation, route }) => {
       </TouchableOpacity>
       <View style={styles.header}>
         <View>
-          <Text style={styles.heading}>Aulas disponiveis</Text>
+          <Text style={styles.heading}>Aulas disponíveis</Text>
+          <Text style={styles.subheading}>{friendlyName}, escolha o nível e encontre sua próxima aula.</Text>
           {modulesEnabled ? (
             <View style={styles.moduleRow}>
+              <Text style={styles.moduleLabel}>M?dulo: {activeModule?.title || "Selecionar"}</Text>
               <TouchableOpacity onPress={() => navigation.navigate("ModuleList")} activeOpacity={0.8}>
-                <Text style={styles.changeModule}>Trocar modulo</Text>
+                <Text style={styles.changeModule}>Trocar m?dulo</Text>
               </TouchableOpacity>
             </View>
           ) : null}
         </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterRow}
+          keyboardShouldPersistTaps="handled"
+        >
+          {availableLevels.map((tag) => {
+            const active = filter === tag;
+            return (
+              <TouchableOpacity
+                key={tag}
+                style={[styles.chip, active && styles.chipActive]}
+                onPress={() => setFilter(tag)}
+                activeOpacity={0.85}
+              >
+                <Text style={[styles.chipText, active && styles.chipTextActive]}>{tag}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
       </View>
       <View style={styles.search}>
         <Feather name="search" size={18} color={theme.muted} />
@@ -181,11 +219,6 @@ const LessonListScreen = ({ navigation, route }) => {
           onChangeText={setSearchTerm}
         />
       </View>
-      {modulesEnabled ? (
-        <Text style={styles.moduleDescription}>
-          Voce esta estudando aulas do modulo {activeModule?.title || "selecionado"}.
-        </Text>
-      ) : null}
     </View>
   );
 
@@ -202,9 +235,9 @@ const LessonListScreen = ({ navigation, route }) => {
     return (
       <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
         <View style={styles.fallbackContainer}>
-          <Text style={styles.heading}>Escolha um mdulo</Text>
-          <Text style={styles.subheading}>Selecione um mdulo para listar as aulas correspondentes.</Text>
-          <CustomButton title="Ir para mdulos" onPress={() => navigation.replace("ModuleList")} />
+          <Text style={styles.heading}>Escolha um módulo</Text>
+          <Text style={styles.subheading}>Selecione um módulo para listar as aulas correspondentes.</Text>
+          <CustomButton title="Ir para módulos" onPress={() => navigation.replace("ModuleList")} />
         </View>
       </SafeAreaView>
     );
@@ -330,6 +363,12 @@ const createStyles = (colors) =>
       fontFamily: typography.fonts.body,
       fontWeight: "700",
     },
+    filterRow: {
+      flexDirection: "row",
+      gap: spacing.sm,
+      marginTop: spacing.sm,
+      paddingRight: spacing.sm,
+    },
     chip: {
       paddingVertical: spacing.xs,
       paddingHorizontal: spacing.md,
@@ -394,3 +433,4 @@ const createStyles = (colors) =>
   });
 
 export default LessonListScreen;
+
