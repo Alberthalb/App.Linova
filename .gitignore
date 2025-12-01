@@ -48,6 +48,8 @@ google-services.json
 GoogleService-Info.plist
 app.config.local.*
 app.local.json
+firebase.rules
+firebase.debug.log
 
 # internal docs (não publicar)
 README.internal.md

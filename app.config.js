@@ -27,7 +27,6 @@ module.exports = ({ config }) => ({
     scheme: "linova",
     icon: "./assets/icon.png",
     userInterfaceStyle: "automatic",
-    newArchEnabled: false,
     splash: {
       image: "./assets/splash-icon.png",
       resizeMode: "contain",

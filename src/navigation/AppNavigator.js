@@ -314,7 +314,7 @@ const AppNavigator = () => {
             id: docSnap.id,
             title: data?.title || `Módulo ${index + 1}`,
             description: data?.description || "",
-            levelTag: data?.level || data?.tag || null,
+            levelTag: data?.levelTag || data?.level || data?.tag || null,
             order: data?.order ?? index,
           };
         });

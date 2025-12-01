@@ -9,7 +9,7 @@ import { getDisplayName } from "../../utils/userName";
 import { useThemeColors, useIsDarkMode } from "../../hooks/useThemeColors";
 import { defaultSummaryStats } from "../../utils/progressStats";
 import { normalizeLevel, LEVEL_SEQUENCE } from "../../utils/levels";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collectionGroup, onSnapshot } from "firebase/firestore";
 import { db } from "../../services/firebase";
 
 const min100 = (value) => Math.max(0, Math.min(100, value));
@@ -111,7 +111,7 @@ const HomeScreen = ({ navigation }) => {
   };
   const closeIaModal = () => setIaModalVisible(false);
   useEffect(() => {
-    const lessonsRef = collection(db, "lessons");
+    const lessonsRef = collectionGroup(db, "lessons");
     const unsubscribe = onSnapshot(
       lessonsRef,
       (snapshot) => {

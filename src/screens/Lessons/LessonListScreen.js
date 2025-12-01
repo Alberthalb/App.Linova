@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useMemo, useState, useCallback } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ActivityIndicator, Alert, ScrollView } from "react-native";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ActivityIndicator, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { spacing, typography, radius } from "../../styles/theme";
@@ -8,6 +8,8 @@ import { getDisplayName } from "../../utils/userName";
 import { useThemeColors } from "../../hooks/useThemeColors";
 import { canAccessLevel } from "../../utils/levels";
 import CustomButton from "../../components/CustomButton";
+import { collection, collectionGroup, onSnapshot, orderBy, query } from "firebase/firestore";
+import { db } from "../../services/firebase";
 
 const LessonListScreen = ({ navigation, route }) => {
   const {
@@ -31,6 +33,13 @@ const LessonListScreen = ({ navigation, route }) => {
   const modulesEnabled = modules && modules.length > 0;
   const firstModuleId = modulesEnabled ? modules[0]?.id : null;
   const activeModule = useMemo(() => modules.find((item) => item.id === activeModuleId), [modules, activeModuleId]);
+  const moduleNameById = useMemo(() => {
+    const map = {};
+    modules.forEach((m) => {
+      if (m?.id) map[m.id] = m.title || m.name || `Modulo ${m.id}`;
+    });
+    return map;
+  }, [modules]);
 
   const isModuleUnlocked = useCallback(
     (moduleId) => {
@@ -44,17 +53,54 @@ const LessonListScreen = ({ navigation, route }) => {
   );
 
   useEffect(() => {
-    const moduleA = modules[0]?.id || "mock-a1";
-    const staticLessons = [
-      { id: "mock-1", title: "Aula 01 - Introducao", level: "A1", order: 1, moduleId: moduleA },
-      { id: "mock-2", title: "Aula 02 - Basico", level: "A1", order: 2, moduleId: moduleA },
-      { id: "mock-3", title: "Aula 03 - Intermediario", level: "A1", order: 3, moduleId: moduleA },
-      { id: "mock-4", title: "Aula 04 - Pratica", level: "A1", order: 4, moduleId: moduleA },
-    ];
-    setLessons(staticLessons);
-    setAvailableLevels(["Todas", "A1"]);
-    setLoading(false);
-  }, [modules]);
+    let unsubscribe = () => {};
+    const listen = (queryRef) =>
+      onSnapshot(
+        queryRef,
+        (snapshot) => {
+          const list = snapshot.docs.map((docSnap, index) => {
+            const data = docSnap.data();
+            return {
+              id: docSnap.id,
+              title: data?.title || `Aula ${index + 1}`,
+              level: data?.level || data?.levelTag || data?.moduleLevel || "A1",
+              order: Number.isFinite(data?.order) ? data.order : index,
+              moduleId: data?.moduleId || data?.module || data?.moduleRef || activeModuleId || null,
+              duration: data?.duration || data?.durationText || null,
+              durationMs: data?.durationMs || data?.durationMillis || null,
+              videoPath: data?.videoPath || data?.videoStoragePath || null,
+              videoUrl: data?.videoUrl || data?.video || null,
+              captionPath: data?.captionPath || data?.subtitlePath || null,
+              captionUrl: data?.captionUrl || data?.subtitleUrl || null,
+              transcript: data?.transcript || "",
+            };
+          });
+          const sorted = list.slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+          setLessons(sorted);
+          const levels = Array.from(
+            new Set(["Todas", ...sorted.map((item) => (item.level ? String(item.level).toUpperCase() : null)).filter(Boolean)])
+          );
+          setAvailableLevels(levels);
+          setLoading(false);
+        },
+        () => {
+          setLessons([]);
+          setAvailableLevels(["Todas"]);
+          setLoading(false);
+        }
+      );
+
+    setLoading(true);
+    if (modulesEnabled && activeModuleId) {
+      const lessonsQuery = query(collection(db, "modules", activeModuleId, "lessons"), orderBy("order", "asc"));
+      unsubscribe = listen(lessonsQuery);
+    } else {
+      const lessonsQuery = query(collectionGroup(db, "lessons"), orderBy("order", "asc"));
+      unsubscribe = listen(lessonsQuery);
+    }
+
+    return () => unsubscribe();
+  }, [modulesEnabled, activeModuleId]);
 
   useEffect(() => {
     setFilter("Todas");
@@ -126,13 +172,14 @@ const LessonListScreen = ({ navigation, route }) => {
       );
       return;
     }
-    navigation.navigate("Lesson", { lessonId: item.id });
+    navigation.navigate("Lesson", { lessonId: item.id, lesson: item, moduleId: item.moduleId || activeModuleId || null });
   };
 
   const renderItem = ({ item }) => {
     const entry = completedLessons[item.id] || {};
     const score = Number.isFinite(entry.score) ? entry.score : Number(entry.score);
     const completed = entry.completed === true || (Number.isFinite(score) && score >= 70);
+    const moduleLabel = moduleNameById[item.moduleId] || (item.moduleId ? `Modulo ${item.moduleId}` : null);
     return (
       <TouchableOpacity
         style={[styles.card, completed && styles.cardCompleted]}
@@ -148,7 +195,7 @@ const LessonListScreen = ({ navigation, route }) => {
             </View>
           )}
         </View>
-        <Text style={styles.level}>Modulo {item.level}</Text>
+        <Text style={styles.level}>{moduleLabel || `Modulo ${item.level || ""}`.trim()}</Text>
       </TouchableOpacity>
     );
   };

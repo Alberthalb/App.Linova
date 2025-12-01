@@ -59,6 +59,7 @@ App.js
 ## Boas praticas implementadas
 - Deep linking seguro: apenas hosts Linova `app-linova.firebaseapp.com`/`app-linova.web.app` ou scheme `linova://` abrem o fluxo de reset.
 - Progresso do quiz criptografado com SecureStore (fallback controlado para AsyncStorage).
+- Regras do Firestore versionadas em `firestore.rules`; aplicar com `firebase deploy --only firestore:rules`.
 - Override `npm overrides.glob` evita vulnerabilidade conhecida.
 - Estrutura de dados previsivel (`lessons`, `users`, `lessonsCompleted`, `initialQuizQuestions`) e helpers para normalizar conteudo irregular do Firestore.
 

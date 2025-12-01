@@ -27,7 +27,7 @@ export const deleteUserProfile = async (uid) => {
 
 export const deleteAllUserData = async (uid) => {
   if (!uid) return;
-  const subcollections = ["initialQuiz", "progress", "lessonsCompleted"];
+  const subcollections = ["initialQuiz", "progress", "lessonsCompleted", "moduleUnlocks"];
   for (const sub of subcollections) {
     const colRef = collection(db, "users", uid, sub);
     const snapshot = await getDocs(colRef);

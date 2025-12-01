@@ -7,10 +7,10 @@ import { useThemeColors } from "../../hooks/useThemeColors";
 import { spacing, typography, radius } from "../../styles/theme";
 import CustomButton from "../../components/CustomButton";
 import { createOrUpdateUserProfile, saveModuleUnlock } from "../../services/userService";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, collectionGroup, onSnapshot } from "firebase/firestore";
 import { db } from "../../services/firebase";
 
-const FILTER_TAGS = ["Iniciante", "Intermediario", "Avancado"];
+const FILTER_TAGS = ["Todos", "Iniciante", "Intermediario", "Avancado"];
 const FALLBACK_MODULES = [
   { id: "module-a1", title: "Modulo A1", levelTag: "A1", description: "Primeiros passos e vocabulario essencial.", order: 0 },
   { id: "module-a2", title: "Modulo A2", levelTag: "A2", description: "Rotinas e expressoes frequentes.", order: 1 },
@@ -31,10 +31,16 @@ const levelOrder = (tag) => {
 };
 
 const levelBucket = (tag) => {
-  if (!tag) return "Outros";
-  if (["A1", "A2", "A2+"].includes(tag)) return "Iniciante";
-  if (["B1", "B1+", "B2", "B2+"].includes(tag)) return "Intermediario";
-  if (["C1", "C1+", "C2"].includes(tag)) return "Avancado";
+  const normalized = (tag || "").toString().trim();
+  const upper = normalized.toUpperCase();
+  const lower = normalized.toLowerCase();
+  if (!normalized) return "Outros";
+  if (["A1", "A2", "A2+"].includes(upper)) return "Iniciante";
+  if (["B1", "B1+", "B2", "B2+"].includes(upper)) return "Intermediario";
+  if (["C1", "C1+", "C2"].includes(upper)) return "Avancado";
+  if (["iniciante", "basico", "basic", "beginner"].includes(lower)) return "Iniciante";
+  if (["intermediario", "intermediate"].includes(lower)) return "Intermediario";
+  if (["avancado", "advanced"].includes(lower)) return "Avancado";
   return "Outros";
 };
 
@@ -42,7 +48,7 @@ const ModuleListScreen = ({ navigation }) => {
   const { modules, moduleUnlocks, selectedModuleId, setSelectedModuleId, currentUser, lessonsCompleted = {} } = useContext(AppContext);
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
-  const [filter, setFilter] = useState("Iniciante");
+  const [filter, setFilter] = useState("Todos");
   const [pendingModule, setPendingModule] = useState(null);
   const [lessons, setLessons] = useState([]);
   const isFirstLogin = useMemo(() => {
@@ -65,7 +71,7 @@ const ModuleListScreen = ({ navigation }) => {
   const firstModuleId = availableModules[0]?.id || null;
 
   useEffect(() => {
-    const lessonsRef = collection(db, "lessons");
+    const lessonsRef = collectionGroup(db, "lessons");
     const unsubscribe = onSnapshot(
       lessonsRef,
       (snapshot) => {
@@ -125,7 +131,8 @@ const ModuleListScreen = ({ navigation }) => {
   };
 
   const filteredModules = useMemo(() => {
-    return availableModules.filter((item) => levelBucket(item.levelTag) === filter);
+    if (filter === "Todos") return availableModules;
+    return availableModules.filter((item) => levelBucket(item.levelTag || item.level || item.tag) === filter);
   }, [availableModules, filter]);
 
   const handleEnterModule = async (module) => {
@@ -152,11 +159,23 @@ const ModuleListScreen = ({ navigation }) => {
     setPendingModule(null);
   };
 
+  const handleFilterChange = (tag) => {
+    setFilter(tag);
+  };
+
+  useEffect(() => {
+    if (!filteredModules.length) return;
+    const stillSelected = filteredModules.some((m) => m.id === selectedModuleId);
+    if (!stillSelected) {
+      setSelectedModuleId(filteredModules[0]?.id || null);
+    }
+  }, [filteredModules, selectedModuleId, setSelectedModuleId]);
+
   const renderFilterChip = useCallback(
     ({ item: tag }) => {
       const active = filter === tag;
       return (
-        <TouchableOpacity style={[styles.chip, active && styles.chipActive]} onPress={() => setFilter(tag)} activeOpacity={0.85}>
+        <TouchableOpacity style={[styles.chip, active && styles.chipActive]} onPress={() => handleFilterChange(tag)} activeOpacity={0.85}>
           <Text style={[styles.chipText, active && styles.chipTextActive]}>{tag}</Text>
         </TouchableOpacity>
       );
@@ -227,6 +246,14 @@ const ModuleListScreen = ({ navigation }) => {
           contentContainerStyle={styles.list}
           ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
           showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyText}>Nenhum modulo para este filtro.</Text>
+              <TouchableOpacity onPress={() => handleFilterChange("Todos")} activeOpacity={0.8}>
+                <Text style={styles.emptyLink}>Ver todos os modulos</Text>
+              </TouchableOpacity>
+            </View>
+          }
         />
         {filteredModules.length === 0 ? (
           <CustomButton title="Ver aulas" onPress={() => navigation.navigate("LessonList")} />
@@ -470,6 +497,21 @@ const createStyles = (colors) =>
       color: colors.muted,
       fontFamily: typography.fonts.body,
       fontWeight: "600",
+    },
+    emptyState: {
+      alignItems: "center",
+      gap: spacing.xs,
+      paddingVertical: spacing.md,
+    },
+    emptyText: {
+      color: colors.muted,
+      fontFamily: typography.fonts.body,
+    },
+    emptyLink: {
+      color: colors.accent,
+      fontFamily: typography.fonts.body,
+      fontWeight: "700",
+      textDecorationLine: "underline",
     },
   });
 
