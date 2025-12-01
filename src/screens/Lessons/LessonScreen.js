@@ -96,6 +96,8 @@ const LessonScreen = ({ route, navigation }) => {
   const [positionMs, setPositionMs] = useState(0);
   const [captionUrl, setCaptionUrl] = useState(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [controlsVisible, setControlsVisible] = useState(true);
+  const controlsTimeoutRef = useRef(null);
   const { level: userLevel, lessonsCompleted = {}, currentUser, moduleUnlocks = {}, modules = [] } = useContext(AppContext);
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -127,6 +129,21 @@ const LessonScreen = ({ route, navigation }) => {
     if (!captionUrl || !showSubtitles) return { type: "disabled" };
     return { type: "language", value: "pt-BR" };
   }, [captionUrl, showSubtitles]);
+  const clearControlsTimer = useCallback(() => {
+    if (controlsTimeoutRef.current) {
+      clearTimeout(controlsTimeoutRef.current);
+      controlsTimeoutRef.current = null;
+    }
+  }, []);
+  const scheduleHideControls = useCallback(() => {
+    clearControlsTimer();
+    if (!isPlaying) return;
+    controlsTimeoutRef.current = setTimeout(() => setControlsVisible(false), 3000);
+  }, [clearControlsTimer, isPlaying]);
+  const showControls = useCallback(() => {
+    setControlsVisible(true);
+    scheduleHideControls();
+  }, [scheduleHideControls]);
   const forcePortrait = useCallback(async () => {
     try {
       await ScreenOrientation.unlockAsync();
@@ -146,12 +163,14 @@ const LessonScreen = ({ route, navigation }) => {
   }, []);
   const exitFullscreen = useCallback(async () => {
     setIsFullscreen(false);
+    showControls();
     await forcePortrait();
-  }, [forcePortrait]);
+  }, [forcePortrait, showControls]);
   const enterFullscreen = useCallback(async () => {
     setIsFullscreen(true);
+    showControls();
     await forceLandscape();
-  }, [forceLandscape]);
+  }, [forceLandscape, showControls]);
 
   useFocusEffect(
     useCallback(() => {
@@ -305,6 +324,7 @@ const LessonScreen = ({ route, navigation }) => {
   }, [lesson, selectedQuality]);
 
   const changeQuality = async (value) => {
+    showControls();
     if (value === selectedQuality) return;
     const next = qualityOptions.find((q) => q.value === value);
     if (!next) return;
@@ -345,6 +365,15 @@ const LessonScreen = ({ route, navigation }) => {
     };
   }, [videoUrl, duration]);
 
+  useEffect(() => {
+    if (controlsVisible && isPlaying) {
+      scheduleHideControls();
+    } else {
+      clearControlsTimer();
+    }
+    return clearControlsTimer;
+  }, [controlsVisible, isPlaying, scheduleHideControls, clearControlsTimer]);
+
   const handlePlaybackStatusUpdate = async (status) => {
     if (status.isLoaded && status.durationMillis && status.durationMillis !== duration) {
       setDuration(status.durationMillis);
@@ -352,6 +381,11 @@ const LessonScreen = ({ route, navigation }) => {
     if (status.isLoaded) {
       setIsPlaying(status.isPlaying);
       setPositionMs(status.positionMillis || 0);
+      if (status.isPlaying) {
+        setControlsVisible((prev) => prev); // keep state but trigger timer via effect
+      } else {
+        setControlsVisible(true);
+      }
     }
     if (!status.isLoaded || !subtitleSegments.length) return;
     const { positionMillis } = status;
@@ -384,6 +418,7 @@ const LessonScreen = ({ route, navigation }) => {
 
   const togglePlayPause = useCallback(async () => {
     if (!videoRef.current) return;
+    showControls();
     try {
       const status = await videoRef.current.getStatusAsync();
       if (status.isPlaying) {
@@ -470,9 +505,11 @@ const LessonScreen = ({ route, navigation }) => {
                     styles.qualityChip,
                     { backgroundColor: controlBg, borderColor: controlBorder },
                     active && { backgroundColor: theme.primary, borderColor: theme.primary },
+                    !controlsVisible && styles.controlsHidden,
                   ]}
                   onPress={() => changeQuality(option.value)}
                   activeOpacity={0.8}
+                  pointerEvents={controlsVisible ? "auto" : "none"}
                 >
                   <Text
                     style={[
@@ -488,15 +525,19 @@ const LessonScreen = ({ route, navigation }) => {
             })}
           </View>
         )}
-        <View style={styles.playerTopRow}>
+        <View style={[styles.playerTopRow, !controlsVisible && styles.controlsHidden]}>
           <TouchableOpacity
-            onPress={() => setShowSubtitles((prev) => !prev)}
+            onPress={() => {
+              setShowSubtitles((prev) => !prev);
+              showControls();
+            }}
             style={[
               styles.subtitleToggle,
               { backgroundColor: controlBg, borderColor: controlBorder },
               fullscreen && styles.subtitleToggleFullscreen,
             ]}
             activeOpacity={0.8}
+            pointerEvents={controlsVisible ? "auto" : "none"}
           >
             <Feather name={showSubtitles ? "eye" : "eye-off"} size={14} color={controlColor} />
             <Text style={[styles.subtitleToggleText, { color: controlColor }, fullscreen && { color: "#fff" }]}>
@@ -526,28 +567,53 @@ const LessonScreen = ({ route, navigation }) => {
           />
         )}
         {videoUrl ? (
-          <TouchableOpacity style={styles.playPauseCenter} onPress={togglePlayPause} activeOpacity={0.85}>
+          <TouchableOpacity
+            style={[styles.playPauseCenter, !controlsVisible && styles.controlsHidden]}
+            onPress={togglePlayPause}
+            activeOpacity={0.85}
+            pointerEvents={controlsVisible ? "auto" : "none"}
+          >
             <Feather name={isPlaying ? "pause" : "play"} size={20} color="#fff" />
           </TouchableOpacity>
         ) : null}
         {showSubtitles && (
-          <View style={[styles.subtitleOverlay, fullscreen && styles.subtitleOverlayFullscreen]} pointerEvents="none">
+          <View
+            style={[
+              styles.subtitleOverlay,
+              fullscreen && styles.subtitleOverlayFullscreen,
+              controlsVisible && styles.subtitleOverlayRaised,
+            ]}
+            pointerEvents="none"
+          >
             <Text style={[styles.subtitleOverlayText, fullscreen && styles.subtitleOverlayTextFullscreen]}>
               {currentSubtitle || "Carregando legendas..."}
             </Text>
           </View>
         )}
-        <View style={styles.playerBottomRow}>
+        <View
+          style={[styles.playerBottomRow, !controlsVisible && styles.controlsHidden]}
+          pointerEvents={controlsVisible ? "auto" : "none"}
+        >
           <Text style={styles.progressLabel}>
             {formatTime(positionMs)} / {formatTime(duration)}
           </Text>
           <TouchableOpacity
-            style={[styles.fullscreenButton, { backgroundColor: fullscreen ? "rgba(255,255,255,0.2)" : controlBg, borderColor: controlBorder }]}
+            style={[
+              styles.fullscreenButton,
+              { backgroundColor: fullscreen ? "rgba(255,255,255,0.2)" : controlBg, borderColor: controlBorder },
+            ]}
             onPress={fullscreen ? exitFullscreen : enterFullscreen}
             activeOpacity={0.9}
+            pointerEvents={controlsVisible ? "auto" : "none"}
           >
             <Feather name={fullscreen ? "minimize-2" : "maximize-2"} size={16} color={fullscreen ? "#fff" : controlColor} />
           </TouchableOpacity>
+        </View>
+        <View
+          pointerEvents={controlsVisible ? "none" : "auto"}
+          style={[StyleSheet.absoluteFill, { zIndex: 4 }]}
+        >
+          <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={showControls} />
         </View>
       </View>
     );
@@ -666,6 +732,9 @@ const createStyles = (colors) =>
       borderWidth: 1,
       borderColor: colors.border,
     },
+    controlsHidden: {
+      opacity: 0,
+    },
     qualityChipActive: {
       backgroundColor: colors.primary,
       borderColor: colors.primary,
@@ -701,7 +770,7 @@ const createStyles = (colors) =>
       position: "absolute",
       left: spacing.sm,
       right: spacing.sm,
-      bottom: spacing.sm,
+      bottom: spacing.md + spacing.lg + spacing.sm,
       paddingVertical: spacing.xs,
       paddingHorizontal: spacing.sm,
       backgroundColor: "rgba(0,0,0,0.5)",
@@ -709,9 +778,12 @@ const createStyles = (colors) =>
       zIndex: 3,
     },
     subtitleOverlayFullscreen: {
-      bottom: spacing.md,
+      bottom: spacing.lg + spacing.md + spacing.sm,
       left: spacing.md,
       right: spacing.md,
+    },
+    subtitleOverlayRaised: {
+      bottom: spacing.lg * 2 + spacing.lg + spacing.sm,
     },
     subtitleOverlayText: {
       color: colors.background,
