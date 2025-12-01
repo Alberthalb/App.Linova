@@ -53,51 +53,47 @@ const LessonListScreen = ({ navigation, route }) => {
   );
 
   useEffect(() => {
-    let unsubscribe = () => {};
-    const listen = (queryRef) =>
-      onSnapshot(
-        queryRef,
-        (snapshot) => {
-          const list = snapshot.docs.map((docSnap, index) => {
-            const data = docSnap.data();
-            return {
-              id: docSnap.id,
-              title: data?.title || `Aula ${index + 1}`,
-              level: data?.level || data?.levelTag || data?.moduleLevel || "A1",
-              order: Number.isFinite(data?.order) ? data.order : index,
-              moduleId: data?.moduleId || data?.module || data?.moduleRef || activeModuleId || null,
-              duration: data?.duration || data?.durationText || null,
-              durationMs: data?.durationMs || data?.durationMillis || null,
-              videoPath: data?.videoPath || data?.videoStoragePath || null,
-              videoUrl: data?.videoUrl || data?.video || null,
-              captionPath: data?.captionPath || data?.subtitlePath || null,
-              captionUrl: data?.captionUrl || data?.subtitleUrl || null,
-              transcript: data?.transcript || "",
-            };
-          });
-          const sorted = list.slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-          setLessons(sorted);
-          const levels = Array.from(
-            new Set(["Todas", ...sorted.map((item) => (item.level ? String(item.level).toUpperCase() : null)).filter(Boolean)])
-          );
-          setAvailableLevels(levels);
-          setLoading(false);
-        },
-        () => {
-          setLessons([]);
-          setAvailableLevels(["Todas"]);
-          setLoading(false);
-        }
-      );
-
     setLoading(true);
-    if (modulesEnabled && activeModuleId) {
-      const lessonsQuery = query(collection(db, "modules", activeModuleId, "lessons"), orderBy("order", "asc"));
-      unsubscribe = listen(lessonsQuery);
-    } else {
-      const lessonsQuery = query(collectionGroup(db, "lessons"), orderBy("order", "asc"));
-      unsubscribe = listen(lessonsQuery);
-    }
+    const baseQuery =
+      modulesEnabled && activeModuleId
+        ? query(collection(db, "modules", activeModuleId, "lessons"), orderBy("order", "asc"))
+        : query(collectionGroup(db, "lessons"), orderBy("order", "asc"));
+
+    const unsubscribe = onSnapshot(
+      baseQuery,
+      (snapshot) => {
+        const list = snapshot.docs.map((docSnap, index) => {
+          const data = docSnap.data();
+          const moduleIdFromPath = docSnap.ref?.parent?.parent?.id || null;
+          return {
+            id: docSnap.id,
+            title: data?.title || `Aula ${index + 1}`,
+            level: data?.level || data?.levelTag || data?.moduleLevel || "A1",
+            order: Number.isFinite(data?.order) ? data.order : index,
+            moduleId: data?.moduleId || data?.module || data?.moduleRef || moduleIdFromPath || activeModuleId || null,
+            duration: data?.duration || data?.durationText || null,
+            durationMs: data?.durationMs || data?.durationMillis || null,
+            videoPath: data?.videoPath || data?.videoStoragePath || null,
+            videoUrl: data?.videoUrl || data?.video || null,
+            captionPath: data?.captionPath || data?.subtitlePath || null,
+            captionUrl: data?.captionUrl || data?.subtitleUrl || null,
+            transcript: data?.transcript || "",
+          };
+        });
+        const sorted = list.slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        setLessons(sorted);
+        const levels = Array.from(
+          new Set(["Todas", ...sorted.map((item) => (item.level ? String(item.level).toUpperCase() : null)).filter(Boolean)])
+        );
+        setAvailableLevels(levels);
+        setLoading(false);
+      },
+      () => {
+        setLessons([]);
+        setAvailableLevels(["Todas"]);
+        setLoading(false);
+      }
+    );
 
     return () => unsubscribe();
   }, [modulesEnabled, activeModuleId]);

@@ -1,7 +1,19 @@
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert, StatusBar } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
+  StatusBar,
+  PanResponder,
+  Platform,
+} from "react-native";
 import * as ScreenOrientation from "expo-screen-orientation";
+import * as NavigationBar from "expo-navigation-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Video } from "expo-av";
 import { Feather } from "@expo/vector-icons";
@@ -98,6 +110,10 @@ const LessonScreen = ({ route, navigation }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
   const controlsTimeoutRef = useRef(null);
+  const timelineRef = useRef(null);
+  const trackMetricsRef = useRef({ width: 0, x: 0 });
+  const [isSeeking, setIsSeeking] = useState(false);
+  const [seekMs, setSeekMs] = useState(null);
   const { level: userLevel, lessonsCompleted = {}, currentUser, moduleUnlocks = {}, modules = [] } = useContext(AppContext);
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -144,6 +160,24 @@ const LessonScreen = ({ route, navigation }) => {
     setControlsVisible(true);
     scheduleHideControls();
   }, [scheduleHideControls]);
+  const hideNavBar = useCallback(async () => {
+    if (Platform.OS !== "android") return;
+    try {
+      await NavigationBar.setVisibilityAsync("hidden");
+      await NavigationBar.setBehaviorAsync("immersiveSticky");
+    } catch (error) {
+      // ignore
+    }
+  }, []);
+  const showNavBar = useCallback(async () => {
+    if (Platform.OS !== "android") return;
+    try {
+      await NavigationBar.setVisibilityAsync("visible");
+      await NavigationBar.setBehaviorAsync("inset-swipe");
+    } catch (error) {
+      // ignore
+    }
+  }, []);
   const forcePortrait = useCallback(async () => {
     try {
       await ScreenOrientation.unlockAsync();
@@ -164,21 +198,25 @@ const LessonScreen = ({ route, navigation }) => {
   const exitFullscreen = useCallback(async () => {
     setIsFullscreen(false);
     showControls();
+    await showNavBar();
     await forcePortrait();
-  }, [forcePortrait, showControls]);
+  }, [forcePortrait, showControls, showNavBar]);
   const enterFullscreen = useCallback(async () => {
     setIsFullscreen(true);
     showControls();
+    await hideNavBar();
     await forceLandscape();
-  }, [forceLandscape, showControls]);
+  }, [forceLandscape, showControls, hideNavBar]);
 
   useFocusEffect(
     useCallback(() => {
       forcePortrait();
+      showNavBar();
       return () => {
         forcePortrait();
+        showNavBar();
       };
-    }, [forcePortrait])
+    }, [forcePortrait, showNavBar])
   );
 
   useEffect(() => {
@@ -366,6 +404,14 @@ const LessonScreen = ({ route, navigation }) => {
   }, [videoUrl, duration]);
 
   useEffect(() => {
+    if (isFullscreen) {
+      hideNavBar();
+    } else {
+      showNavBar();
+    }
+  }, [isFullscreen, hideNavBar, showNavBar]);
+
+  useEffect(() => {
     if (controlsVisible && isPlaying) {
       scheduleHideControls();
     } else {
@@ -374,13 +420,73 @@ const LessonScreen = ({ route, navigation }) => {
     return clearControlsTimer;
   }, [controlsVisible, isPlaying, scheduleHideControls, clearControlsTimer]);
 
+  const updateSeekFromGesture = useCallback(
+    (nativeEvent) => {
+      if (!duration) return { clampedMs: 0, ratio: 0 };
+      const { width, x } = trackMetricsRef.current;
+      const baseWidth = width || 1;
+      const pointX = width ? nativeEvent.pageX - x : nativeEvent.locationX;
+      const clampedX = Math.max(0, Math.min(pointX, baseWidth));
+      const ratio = clampedX / baseWidth;
+      const clampedMs = Math.max(0, Math.min(duration, ratio * duration));
+      return { clampedMs, ratio };
+    },
+    [duration]
+  );
+
+  const commitSeek = useCallback(
+    async (targetMs) => {
+      if (!videoRef.current || !Number.isFinite(targetMs)) return;
+      try {
+        await videoRef.current.setPositionAsync(targetMs);
+        setPositionMs(targetMs);
+      } catch (error) {
+        // ignore seek errors
+      }
+    },
+    []
+  );
+
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderGrant: (evt) => {
+          showControls();
+          setIsSeeking(true);
+          const { clampedMs } = updateSeekFromGesture(evt.nativeEvent);
+          setSeekMs(clampedMs);
+        },
+        onPanResponderMove: (evt) => {
+          const { clampedMs } = updateSeekFromGesture(evt.nativeEvent);
+          setSeekMs(clampedMs);
+        },
+        onPanResponderRelease: (evt) => {
+          const { clampedMs } = updateSeekFromGesture(evt.nativeEvent);
+          setSeekMs(null);
+          setIsSeeking(false);
+          commitSeek(clampedMs);
+          scheduleHideControls();
+        },
+        onPanResponderTerminationRequest: () => false,
+        onPanResponderTerminate: () => {
+          setSeekMs(null);
+          setIsSeeking(false);
+        },
+      }),
+    [updateSeekFromGesture, commitSeek, showControls, scheduleHideControls]
+  );
+
   const handlePlaybackStatusUpdate = async (status) => {
     if (status.isLoaded && status.durationMillis && status.durationMillis !== duration) {
       setDuration(status.durationMillis);
     }
     if (status.isLoaded) {
       setIsPlaying(status.isPlaying);
-      setPositionMs(status.positionMillis || 0);
+      if (!isSeeking) {
+        setPositionMs(status.positionMillis || 0);
+      }
       if (status.isPlaying) {
         setControlsVisible((prev) => prev); // keep state but trigger timer via effect
       } else {
@@ -426,10 +532,11 @@ const LessonScreen = ({ route, navigation }) => {
       } else {
         await videoRef.current.playAsync();
       }
+      scheduleHideControls();
     } catch (error) {
       // ignore playback toggle errors
     }
-  }, []);
+  }, [showControls, scheduleHideControls]);
 
   const progressEntry = lessonsCompleted[lessonId] || {};
   const hasWatched = !!(progressEntry.watched || progressEntry.completed || progressEntry.score !== undefined);
@@ -492,6 +599,8 @@ const LessonScreen = ({ route, navigation }) => {
     const controlColor = fullscreen ? "#fff" : theme.text;
     const controlBg = fullscreen ? "rgba(255,255,255,0.08)" : theme.surface;
     const controlBorder = fullscreen ? "rgba(255,255,255,0.35)" : theme.border;
+    const displayPosition = isSeeking && seekMs !== null ? seekMs : positionMs;
+    const progressPct = duration ? Math.min(100, Math.max(0, (displayPosition / duration) * 100)) : 0;
     return (
       <View style={wrapperStyle}>
         {qualityOptions.length > 1 && (
@@ -595,8 +704,34 @@ const LessonScreen = ({ route, navigation }) => {
           pointerEvents={controlsVisible ? "auto" : "none"}
         >
           <Text style={styles.progressLabel}>
-            {formatTime(positionMs)} / {formatTime(duration)}
+            {formatTime(displayPosition)} / {formatTime(duration)}
           </Text>
+          <View
+            style={styles.timelineContainer}
+            {...panResponder.panHandlers}
+            onLayout={(e) => {
+              timelineRef.current?.measureInWindow((pageX, _pageY, width) => {
+                trackMetricsRef.current = { width, x: pageX };
+              });
+            }}
+            ref={timelineRef}
+            hitSlop={{ top: spacing.sm, bottom: spacing.sm, left: spacing.sm, right: spacing.sm }}
+          >
+            <View style={styles.timelineTrack}>
+              <View
+                style={[
+                  styles.timelineProgress,
+                  { width: `${progressPct}%` },
+                ]}
+              />
+              <View
+                style={[
+                  styles.timelineThumb,
+                  { left: `${progressPct}%` },
+                ]}
+              />
+            </View>
+          </View>
           <TouchableOpacity
             style={[
               styles.fullscreenButton,
@@ -830,6 +965,40 @@ const createStyles = (colors) =>
       fontSize: typography.small,
       color: colors.background,
       minWidth: 120,
+    },
+    timelineContainer: {
+      flex: 1,
+      paddingHorizontal: spacing.xs,
+      justifyContent: "center",
+    },
+    timelineTrack: {
+      height: 12,
+      backgroundColor: "rgba(255,255,255,0.2)",
+      borderRadius: 6,
+      overflow: "hidden",
+      justifyContent: "center",
+    },
+    timelineProgress: {
+      position: "absolute",
+      left: 0,
+      top: 0,
+      bottom: 0,
+      backgroundColor: colors.primary,
+    },
+    timelineThumb: {
+      position: "absolute",
+      width: 16,
+      height: 16,
+      borderRadius: 8,
+      backgroundColor: colors.primary,
+      borderWidth: 2,
+      borderColor: colors.surface,
+      top: -4,
+      marginLeft: -8,
+      shadowColor: "#000",
+      shadowOpacity: 0.25,
+      shadowRadius: 3,
+      elevation: 3,
     },
     subtitleToggle: {
       flexDirection: "row",
