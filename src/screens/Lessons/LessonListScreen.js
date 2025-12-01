@@ -4,7 +4,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { spacing, typography, radius } from "../../styles/theme";
 import { AppContext } from "../../context/AppContext";
-import { getDisplayName } from "../../utils/userName";
 import { useThemeColors } from "../../hooks/useThemeColors";
 import { canAccessLevel } from "../../utils/levels";
 import CustomButton from "../../components/CustomButton";
@@ -21,12 +20,9 @@ const LessonListScreen = ({ navigation, route }) => {
     selectedModuleId,
     setSelectedModuleId,
   } = useContext(AppContext);
-  const friendlyName = getDisplayName(userName);
-  const [filter, setFilter] = useState("Todas");
   const [searchTerm, setSearchTerm] = useState("");
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [availableLevels, setAvailableLevels] = useState(["Todas"]);
   const [activeModuleId, setActiveModuleId] = useState(null);
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -82,25 +78,16 @@ const LessonListScreen = ({ navigation, route }) => {
         });
         const sorted = list.slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
         setLessons(sorted);
-        const levels = Array.from(
-          new Set(["Todas", ...sorted.map((item) => (item.level ? String(item.level).toUpperCase() : null)).filter(Boolean)])
-        );
-        setAvailableLevels(levels);
         setLoading(false);
       },
       () => {
         setLessons([]);
-        setAvailableLevels(["Todas"]);
         setLoading(false);
       }
     );
 
     return () => unsubscribe();
   }, [modulesEnabled, activeModuleId]);
-
-  useEffect(() => {
-    setFilter("Todas");
-  }, [currentLevel]);
 
   useEffect(() => {
     const moduleFromRoute = route?.params?.moduleId;
@@ -150,15 +137,14 @@ const LessonListScreen = ({ navigation, route }) => {
   const filteredLessons = useMemo(() => {
     const targetModuleId = modulesEnabled ? activeModuleId || firstModuleId : null;
     return lessons.filter((item) => {
-      const matchesLevel = filter === "Todas" || item.level?.toLowerCase() === filter.toLowerCase();
       const matchesQuery = item.title.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesModule =
         !targetModuleId ||
         item.moduleId === targetModuleId ||
         (!item.moduleId && targetModuleId === firstModuleId);
-      return matchesLevel && matchesQuery && matchesModule;
+      return matchesQuery && matchesModule;
     });
-  }, [filter, searchTerm, lessons, modulesEnabled, activeModuleId, firstModuleId]);
+  }, [searchTerm, lessons, modulesEnabled, activeModuleId, firstModuleId]);
 
   const handleLessonPress = (item) => {
     if (!canAccessLevel(currentLevel, item.level)) {

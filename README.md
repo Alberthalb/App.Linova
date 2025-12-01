@@ -1,74 +1,74 @@
-# Linova - app mobile de ingles
+# Linova — App Mobile de Inglês
 
-Experiencia mobile criada para validar a metodologia Linova: trilhas de aulas em video, legendas sincronizadas, transcricoes e quizzes que promovem o aluno quando domina o nivel. Tudo foi desenvolvido em Expo + React Native consumindo Firebase (Auth, Firestore e Storage).
+Aplicativo em Expo/React Native que entrega aulas em vídeo com legendas, transcrição e quizzes conectados ao Firebase (Auth, Firestore, Storage). Tudo pronto para demos, validação com usuários e apresentação em portfólio.
 
-## Pitch
-- Problema: estudantes iniciantes pulam de conteudo em conteudo sem saber onde focar.
-- Solucao: app de estudo guiado que aplica um quiz de nivelamento, destrava apenas o que faz sentido e coleta dados em tempo real.
-- Resultado: fluxo completo de onboarding -> aula -> quiz -> area logada pronto para demos, investors e portfolio.
+---
 
-## Highlights do produto
-- Onboarding gamificado com quiz que sugere o nivel inicial (A1–C2) e grava respostas no Firestore.
-- Player de video com troca de qualidade, legendas `.vtt` e transcricao rolavel.
-- Quiz por aula com normalizacao das perguntas (aceita objetos/dicionarios no Firestore), nota local criptografada (SecureStore) + sincronizacao em nuvem.
-- Gate por nivel: so acessa aulas/quiz do nivel atual e sobe automaticamente ao completar todas com nota >=70%.
-- Dashboard Home com estatisticas (dias ativos, aulas, atividades) calculadas em tempo real.
-- Area da conta com atualizacao de perfil, resumo, troca de senha, logout e exclusao completa.
-- Tema claro/escuro controlado pelo app (override forceDark no Android) e navegacao com swipe entre tabs.
+## Pitch rápido
+- **Problema:** alunos iniciantes não sabem o que estudar e perdem foco.
+- **Solução:** onboarding com quiz de nível, trilha guiada de aulas, player com legendas e quiz por aula que libera progresso e promoção de nível.
+- **Resultado:** fluxo completo (onboarding → aula → quiz → conta) funcionando end‑to‑end com backend em tempo real.
 
-## Stack principal
+---
+
+## Principais features
+- Quiz de nivelamento (A1–C2) que grava respostas e sugere nível inicial.
+- Player de vídeo com troca de qualidade, legendas `.vtt`, transcrição e fullscreen custom (mantém posição ao alternar).
+- Timeline interativa: arraste para avançar/voltar; controles auto‑escondem, legendas reaparecem na base.
+- Gate por nível e por aula: só libera quiz após assistir; promoção automática com nota ≥70%.
+- Lista de módulos/aulas com bloqueio por XP ou prova de capacidade.
+- Conta/segurança: atualização de perfil, troca de senha, logout e exclusão completa (limpa Firestore + Auth).
+- Tema claro/escuro e swipe entre tabs.
+
+---
+
+## Stack
 | Camada | Tecnologias |
 | --- | --- |
 | Mobile | Expo SDK 54, React Native 0.81, React 19 |
-| Navegacao | React Navigation 7 (stack + bottom tabs) + gesto custom `useTabSwipeNavigation` |
+| Navegação | React Navigation 7 (stack + bottom tabs) + gesto custom |
 | Backend | Firebase Auth, Firestore, Storage (SDK 12) |
-| UX e utilitarios | Expo AV, Expo SecureStore, AsyncStorage, Expo Linking, Feather Icons, Google Fonts (Poppins/Inter/Manrope) |
-| Config | `app.config.js` com `dotenv`, plugin `plugins/disableForceDark`, EAS Build/Updates |
+| Mídia | `expo-av` (player), legendas WEBVTT, fullscreen custom |
+| Segurança/armazenamento | SecureStore (fallback AsyncStorage) para progresso local |
+| UI | Google Fonts (Poppins/Inter/Manrope), Feather Icons, tema em `src/styles/theme.js` |
 
-## Arquitetura em um olhar
-```
-App.js
-|- AppNavigator (stack + tabs + deep linking seguro)
-|  |- Splash / Welcome / Auth / Quiz de nivel
-|  |- MainTabs
-|     |- HomeStack (Home -> LessonList -> Lesson -> LessonQuiz)
-|     |- AccountStack (Account -> ChangePassword)
-|     |- Settings
-```
-- `src/context/AppContext` centraliza usuario, nivel, tema e progresso (listeners em tempo real).
-- `LessonScreen` consome aulas do Firestore, baixa midias do Storage e salva `watched`.
-- `LessonQuizScreen` normaliza perguntas, calcula nota local/cloud e promove nivel conforme `LEVEL_SEQUENCE`.
-- `plugins/disableForceDark` garante visual consistente mesmo quando o sistema tenta forcar dark mode.
+---
 
-## Experiencia do usuario
-1. Splash + Welcome verificam autenticacao e enviam para onboarding ou area logada.
-2. Quiz de nivel calcula media das respostas, registra sugestao de nivel e inicia em Discoverer.
-3. Home mostra saudacao, estatisticas e atalhos (incluindo placeholder de IA Coach).
-4. Lista de aulas busca `lessons` do Firestore, filtra por nivel, inclui busca textual e indicador de conclusao.
-5. Player combina video do Storage, legendas `.vtt`, transcricao completa e so libera o quiz apos assistir.
-6. Quiz mostra progresso, nota final e sincroniza resultados (>=70% marca aula como concluida e alimenta promocao de nivel).
-7. Conta + Settings liberam alteracao de perfil, resumo, troca de senha, logout e toggle de tema.
+## Estrutura (essencial para leitura de código)
+```
+App.js                 # Entrada Expo e carregamento de fonts
+app.config.js          # Config dinâmica e injeção de .env
+src/navigation/AppNavigator.js   # Stacks, tabs, deep linking seguro
+src/context/AppContext.js        # Estado global (auth, progresso, tema, módulos)
+src/screens/Lessons/LessonListScreen.js  # Lista de aulas por módulo
+src/screens/Lessons/LessonScreen.js      # Player, legendas, timeline, fullscreen
+src/screens/Lessons/LessonQuizScreen.js  # Quiz da aula e promoção de nível
+src/screens/Lessons/ModuleListScreen.js  # Seleção/desbloqueio de módulos
+src/services/firebase.js         # Inicialização Firebase
+src/services/authService.js      # Fluxos de login/reset/alteração/exclusão
+src/services/userService.js      # Perfil, progresso, quiz inicial
+src/styles/theme.js              # Paleta, tipografia, spacing
+README.internal.md               # Guia técnico completo
+```
+
+---
 
 ## Como rodar localmente
 1. `npm install`
-2. Copie `.env.example` para `.env` e preencha `EXPO_PUBLIC_FIREBASE_*` com as chaves do seu projeto.
-3. `npm start` para abrir o Expo Dev Tools. Use `npm run android`, `npm run ios` ou `npm run web` conforme o destino.
+2. Copie `.env.example` → `.env` e preencha `EXPO_PUBLIC_FIREBASE_*` com seu projeto Firebase.
+3. `npm start` (Expo Dev Tools) ou `npm run android` / `npm run ios`.
+4. Faça login/cadastro e percorra: quiz de nível → lista de aulas → player (fullscreen + legendas) → quiz → promoção de nível.
 
-> `app.config.js` le o `.env` e injeta as credenciais em `expo.extra.firebase`, mantendo o repositorio livre de secrets.
+---
 
-## Boas praticas implementadas
-- Deep linking seguro: apenas hosts Linova `app-linova.firebaseapp.com`/`app-linova.web.app` ou scheme `linova://` abrem o fluxo de reset.
-- Progresso do quiz criptografado com SecureStore (fallback controlado para AsyncStorage).
-- Regras do Firestore versionadas em `firestore.rules`; aplicar com `firebase deploy --only firestore:rules`.
-- Override `npm overrides.glob` evita vulnerabilidade conhecida.
-- Estrutura de dados previsivel (`lessons`, `users`, `lessonsCompleted`, `initialQuizQuestions`) e helpers para normalizar conteudo irregular do Firestore.
+## Pontos de atenção técnicos
+- Um único `Video` controla retrato/fullscreen (não reinicia ao alternar); timeline com `PanResponder` garante seek preciso.
+- Legendas usam overlay próprio + `textTracks`; exibem apenas quando os controles somem.
+- Barra de navegação Android escondida em fullscreen (`immersiveSticky`), rotação travada em landscape no modo expandido.
+- Progresso de quiz salvo local (SecureStore) e no Firestore; `lessonsCompleted` alimenta dashboard e gating.
+- Dados do usuário e aulas são ouvidos em tempo real via `onSnapshot`.
 
-## Roadmap curto
-- Adicionar capturas de tela e um video demo a este README.
-- Publicar um mock/seed do Firestore para quem quiser testar sem back-end real.
-- Instrumentar analytics (Firebase ou Segment) e experimentar IA Coach (placeholder ja existe no app).
+---
 
-## Quer explorar mais?
-- Arquitetura completa, modelos e rotinas operacionais estao documentados em `README.internal.md`.
-- Estrutura principal: `src/components`, `src/screens`, `src/services`, `src/utils`, `src/styles`.
-- Fique a vontade para abrir uma issue ou conversar se quiser ver o Linova em funcionamento ao vivo.
+## Créditos
+Projeto desenvolvido para validação da metodologia Linova e apresentado como peça de portfólio técnico.
